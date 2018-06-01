@@ -1,0 +1,25 @@
+---
+# lin-base/handlers: common ansible defaults used in other roles
+
+lin_hide_secrets: yes
+lin_allow_sysctl: yes
+lin_ssh_port: 22
+
+lin_web_user: www-data
+lin_web_group: www-data
+lin_web_ports: [ 80, 443 ]
+
+lin_mail_domain: example.com
+lin_web_domain: example.com
+lin_web_force_ssl: no
+
+lin_systemd_dir: /etc/systemd/system
+lin_local_bin: /usr/local/bin
+
+lin_nginx_conf_dir: /etc/nginx/conf.d
+lin_nginx_site_dir: /etc/nginx/sites-enabled
+
+lin_uwsgi_base: /etc/uwsgi-emperor
+lin_uwsgi_vassals: "{{ lin_uwsgi_base }}/vassals"
+lin_uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
+...
