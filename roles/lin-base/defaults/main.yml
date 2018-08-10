@@ -1,12 +1,13 @@
 ---
 # lin-base/handlers: common ansible defaults used in other roles
 
-lin_hide_secrets: yes
+hide_secrets: yes
+web_group: www-data
+
 lin_allow_sysctl: yes
 lin_ssh_port: 22
 
 lin_web_user: www-data
-lin_web_group: www-data
 lin_web_ports: [ 80, 443 ]
 
 lin_mail_domain: example.com

@@ -13,8 +13,13 @@ None
 Available variables are listed below, along with default values.
 
 
-    lin_hide_secrets: yes
+    hide_secrets: yes
 TBD
+
+    web_group: www-data
+TBD
+
+---
 
     lin_allow_sysctl: yes
 TBD
@@ -25,9 +30,6 @@ TBD
 ---
 
     lin_web_user: www-data
-TBD
-
-    lin_web_group: www-data
 TBD
 
     lin_web_ports: [ 80, 443 ]
