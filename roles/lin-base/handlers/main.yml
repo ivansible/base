@@ -1,5 +1,11 @@
 ---
 # lin-base/handlers: common ansible handlers used in other roles
+# Note: handlers will be run in the order they appear in this file
+
+# This must be the first handler
+- name: update system temp files
+  command: systemd-tmpfiles --create
+  become: yes
 
 - name: restart nginx service
   systemd:
@@ -13,19 +19,16 @@
     state: restarted
   become: yes
 
-- name: update system temp files
-  command: systemd-tmpfiles --create
-  become: yes
-
-- name: remove temporary play files
-  shell: rm -rfv {{ temp_file }}.*
-  become: true
-  register: _rm_temp
-  changed_when: _rm_temp.stdout.find('removed') != -1
-
 - name: restart ssh service
   systemd:
     name: sshd
     state: restarted
   become: yes
+
+# This must be the last handler
+- name: remove temporary play files
+  shell: rm -rfv {{ temp_file }}.*
+  become: true
+  register: _rm_temp
+  changed_when: _rm_temp.stdout.find('removed') != -1
 ...
