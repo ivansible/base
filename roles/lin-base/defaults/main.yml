@@ -20,7 +20,7 @@ nginx_conf_dir: /etc/nginx/conf.d
 nginx_site_dir: /etc/nginx/sites-enabled
 
 uwsgi_base: /etc/uwsgi-emperor
-uwsgi_vassals: "{{ lin_uwsgi_base }}/vassals"
+uwsgi_vassals: "{{ uwsgi_base }}/vassals"
 uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 
 lin_ssh_port: 22
