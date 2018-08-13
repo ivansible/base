@@ -21,7 +21,7 @@ TBD
 
 ---
 
-    lin_allow_sysctl: yes
+    allow_sysctl: yes
 TBD
 
     lin_ssh_port: 22
@@ -29,48 +29,48 @@ TBD
 
 ---
 
-    lin_web_user: www-data
+    web_user: www-data
 TBD
 
-    lin_web_ports: [ 80, 443 ]
-TBD
-
----
-
-    lin_mail_domain: example.com
-TBD
-
-    lin_web_domain: example.com
-TBD
-
-    lin_web_force_ssl: no
+    web_ports: [ 80, 443 ]
 TBD
 
 ---
 
-    lin_systemd_dir: /etc/systemd/system
+    mail_domain: example.com
 TBD
 
-    lin_local_bin: /usr/local/bin
+    web_domain: example.com
 TBD
 
----
-
-    lin_nginx_conf_dir: /etc/nginx/conf.d
-TBD
-
-    lin_nginx_site_dir: /etc/nginx/sites-enabled
+    web_force_ssl: no
 TBD
 
 ---
 
-    lin_uwsgi_base: /etc/uwsgi-emperor
+    systemd_dir: /etc/systemd/system
 TBD
 
-    lin_uwsgi_vassals: "{{ lin_uwsgi_base }}/vassals"
+    local_bin: /usr/local/bin
 TBD
 
-    lin_uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
+---
+
+    nginx_conf_dir: /etc/nginx/conf.d
+TBD
+
+    nginx_site_dir: /etc/nginx/sites-enabled
+TBD
+
+---
+
+    uwsgi_base: /etc/uwsgi-emperor
+TBD
+
+    uwsgi_vassals: "{{ lin_uwsgi_base }}/vassals"
+TBD
+
+    uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 TBD
 
 

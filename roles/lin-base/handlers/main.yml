@@ -1,31 +1,31 @@
 ---
 # lin-base/handlers: common ansible handlers used in other roles
 
-- name: lin remove temporary files
+- name: restart nginx service
+  systemd:
+    name: nginx
+    state: restarted
+  become: yes
+
+- name: restart uwsgi service
+  systemd:
+    name: uwsgi-emperor
+    state: restarted
+  become: yes
+
+- name: update system temp files
+  command: systemd-tmpfiles --create
+  become: yes
+
+- name: remove temporary play files
   shell: rm -rfv {{ temp_file }}.*
   become: true
   register: _rm_temp
   changed_when: _rm_temp.stdout.find('removed') != -1
 
-- name: lin update system temp files
-  command: systemd-tmpfiles --create
-  become: true
-
-- name: lin restart ssh
+- name: restart ssh service
   systemd:
     name: sshd
     state: restarted
-  become: true
-
-- name: lin restart nginx
-  systemd:
-    name: nginx
-    state: restarted
-  become: true
-
-- name: lin restart uwsgi
-  systemd:
-    name: uwsgi-emperor
-    state: restarted
-  become: true
+  become: yes
 ...
