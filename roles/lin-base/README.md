@@ -1,6 +1,6 @@
-# Role lin-base
+# lin_base
 
-Common ansible handlers and defaults for use in other roles.
+Common ansible handlers and defaults for using in other roles.
 
 
 ## Requirements

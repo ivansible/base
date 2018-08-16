@@ -2,6 +2,7 @@
 dependencies: []
 
 galaxy_info:
+  role_name: lin_base
   author: "Ivan Andreev"
   description: "Common ansible handlers and defaults used in other roles"
   company: "IvanSible"
