@@ -24,6 +24,7 @@ uwsgi_vassals: "{{ uwsgi_base }}/vassals"
 uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 
 lin_ssh_port: 22
+lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 
 systemd_dir: /etc/systemd/system
 local_bin: /usr/local/bin
