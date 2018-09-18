@@ -1,0 +1,46 @@
+---
+# download encrypted database dump and invoke postgresql_db: state=restore
+- block:
+    - name: reserve temporary path for encrypted database dump
+      tempfile:
+        prefix: ansible.temp.pgdump.
+        suffix: .pgdump.gz.aes
+      register: temp_aes_pgdump
+      notify: remove temporary encrypted database dump
+
+    - name: download encrypted database dump {{ backup_url | basename }}
+      get_url:
+        url: "{{ backup_url }}"
+        dest: "{{ temp_aes_pgdump.path }}"
+        mode: 0600
+        force: yes  # overwrite temporary file
+
+    - block:
+        - name: in-place decrypt database dump
+          script: scripts/gz-decrypt.sh "{{ temp_aes_pgdump.path }}"
+          environment:
+            CRYPTOPASS: "{{ backup_secret }}"
+      rescue:
+        - fail:
+            msg: "please provide correct backup_secret for {{ backup_url | basename }}"
+
+    - name: restore database from dump
+      postgresql_db:
+        name: "{{ db_name }}"
+        state: restore
+        target: "{{ temp_aes_pgdump.path }}"
+
+        login_host: "{{ login_host }}"
+        port: "{{ db_port | default(5432) }}"
+        login_user: "{{ login_user | default('postgres') }}"
+        login_password: "{{ login_password }}"
+
+    - name: remove temporary encrypted database dump now
+      file:
+        path: "{{ temp_aes_pgdump.path }}"
+        state: absent
+
+  # end of block
+  become: yes
+  tags: backup_block_db_restore
+...

@@ -1,0 +1,54 @@
+---
+- name: check whether flag file exists
+  stat:
+    path: "{{ creates }}"
+    get_checksum: no
+  become: yes
+  register: flag_file
+  when: creates is defined
+  tags: backup_block_unarchive
+
+- block:
+    - name: reserve temporary path for encrypted tarball
+      tempfile:
+        prefix: ansible.temp.tarball.
+        suffix: .tar.gz.aes.tar
+      register: temp_aes_tarball
+      notify: remove temporary encrypted tarball
+
+    - name: download encrypted tarball {{ backup_url | basename }}
+      get_url:
+        url: "{{ backup_url }}"
+        dest: "{{ temp_aes_tarball.path }}"
+        mode: 0600
+        force: yes  # overwrite temporary file
+
+    - block:
+        - name: inplace decrypt the tarball
+          script: scripts/gz-decrypt.sh "{{ temp_aes_tarball.path }}"
+          environment:
+            CRYPTOPASS: "{{ backup_secret }}"
+      rescue:
+        - fail:
+            msg: "please provide correct backup_secret for {{ backup_url | basename }}"
+
+    - name: unarchive decrypted tarball
+      unarchive:
+        src: "{{ temp_aes_tarball.path }}"
+        remote_src: yes
+        dest: "{{ dest }}"
+        owner: "{{ owner | default(omit) }}"
+        group: "{{ group | default(omit) }}"
+        mode: "{{ mode | default(omit) }}"
+
+    - name: remove temporary encrypted tarball now
+      file:
+        path: "{{ temp_aes_tarball.path }}"
+        state: absent
+
+  # end of block
+  become: yes
+  when: creates is not defined
+        or flag_file.stat.exists == false
+  tags: backup_block_unarchive
+...

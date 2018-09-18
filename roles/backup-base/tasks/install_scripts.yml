@@ -1,0 +1,21 @@
+---
+# install backup-restore scripts on target host
+- block:
+    - name: directory for backup-restore scripts
+      file:
+        path: /usr/local/bin
+        state: directory
+
+    - name: install encrypt-decrypt scripts
+      copy:
+        src: scripts/{{ item }}
+        dest: /usr/local/bin/{{ item }}
+        owner: root
+        mode: 0755
+      loop:
+        - gz-encrypt.sh
+        - gz-decrypt.sh
+  # end of block
+  become: yes
+  tags: backup_block_install
+...

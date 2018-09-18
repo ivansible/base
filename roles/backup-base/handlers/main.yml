@@ -1,2 +1,15 @@
 ---
 # handlers file for ivansible.backup_base
+
+- name: remove temporary encrypted database dump
+  file:
+    path: "{{ temp_aes_pgdump.path }}"
+    state: absent
+  become: yes
+
+- name: remove temporary encrypted tarball
+  file:
+    path: "{{ temp_aes_tarball.path }}"
+    state: absent
+  become: yes
+...
