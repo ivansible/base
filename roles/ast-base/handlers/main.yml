@@ -1,2 +1,17 @@
 ---
 # handlers file for ivansible.asterisk_base
+# inherited by all asterisk roles
+
+- name: restart asterisk service
+  systemd:
+    name: asterisk
+    state: restarted
+  become: yes
+
+# please use either restart (asterisk_core) or reload (other asterisk roles)
+- name: reload asterisk service
+  systemd:
+    name: asterisk
+    state: reloaded
+  become: yes
+...
