@@ -43,6 +43,12 @@ Comma-delimited list of codecs. Meaning depends on a particular role.
 By default qualify timeout is 1 second (`yes`). However, sometimes you need
 to increase the timeout, e.g. set this value to `3000` (milliseconds).
 
+    ast_pg_host: localhost
+    ast_pg_port: 5432
+    ast_pg_dbname: asterisk
+    ast_pg_user: asterisk
+    ast_pg_pass: secret
+Database connection parameters.
 
     ast_local_dir: /usr/local/asterisk
 Directory for custom asterisk utilities, sounds etc.

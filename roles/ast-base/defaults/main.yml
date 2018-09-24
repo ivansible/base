@@ -9,6 +9,14 @@ ast_reset: no
 ast_experimental: no
 
 
+ast_pg_host: localhost
+ast_pg_port: 5432
+ast_pg_dbname: asterisk
+ast_pg_user: asterisk
+ast_pg_pass: secret
+ast_pg_dump_url: ""
+
+
 ast_ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
 ast_ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
 

@@ -5,7 +5,7 @@ dependencies:
 galaxy_info:
   role_name: asterisk_base
   author: "Ivan Andreev"
-  description: "Common handlers and defaults for asterisk roles"
+  description: "common handlers and defaults for asterisk roles"
   company: "IvanSible"
   license: MIT
   min_ansible_version: 2.5
