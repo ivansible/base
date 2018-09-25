@@ -1,0 +1,5 @@
+---
+- name: ivansible.nginx_base root action 1
+  debug:
+    msg: action 1
+...
