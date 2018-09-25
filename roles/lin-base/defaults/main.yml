@@ -4,25 +4,6 @@
 hide_secrets: yes
 allow_sysctl: yes
 
-web_user: www-data
-web_group: www-data
-
-web_domain: example.com
-mail_domain: "{{ web_domain }}"
-
-web_ports:
-  - 80
-  - 443
-
-web_force_ssl: no
-
-nginx_conf_dir: /etc/nginx/conf.d
-nginx_site_dir: /etc/nginx/sites-enabled
-
-uwsgi_base: /etc/uwsgi-emperor
-uwsgi_vassals: "{{ uwsgi_base }}/vassals"
-uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
-
 lin_ssh_port: 22
 lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 

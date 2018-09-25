@@ -1,6 +1,6 @@
 # lin_base
 
-Common ansible handlers and defaults for using in other roles.
+Common ansible handlers and defaults for other roles.
 
 
 ## Requirements
@@ -16,11 +16,6 @@ Available variables are listed below, along with default values.
     hide_secrets: yes
 TBD
 
-    web_group: www-data
-TBD
-
----
-
     allow_sysctl: yes
 TBD
 
@@ -32,54 +27,28 @@ TBD
 
 ---
 
-    web_user: www-data
-TBD
-
-    web_ports: [ 80, 443 ]
-TBD
-
----
-
-    mail_domain: example.com
-TBD
-
-    web_domain: example.com
-TBD
-
-    web_force_ssl: no
-TBD
-
----
-
     systemd_dir: /etc/systemd/system
 TBD
 
     local_bin: /usr/local/bin
 TBD
 
----
 
-    nginx_conf_dir: /etc/nginx/conf.d
-TBD
+## Handlers
 
-    nginx_site_dir: /etc/nginx/sites-enabled
-TBD
+- update system temp files
+- restart ssh service
+- remove temporary play files
 
----
 
-    uwsgi_base: /etc/uwsgi-emperor
-TBD
+## Tags
 
-    uwsgi_vassals: "{{ lin_uwsgi_base }}/vassals"
-TBD
-
-    uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
-TBD
+None
 
 
 ## Example Playbook
 
-None
+This role is only intended as a basis for inheritance.
 
 
 ## License
