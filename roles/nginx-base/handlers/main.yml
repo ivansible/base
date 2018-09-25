@@ -1,2 +1,16 @@
 ---
-# handlers file for ivansible.nginx_base
+# nginx_base/handlers: common nginx handlers for other roles
+# Note: handlers will be run in the order they appear in this file
+
+- name: restart nginx service
+  systemd:
+    name: nginx
+    state: restarted
+  become: yes
+
+- name: restart uwsgi service
+  systemd:
+    name: uwsgi-emperor
+    state: restarted
+  become: yes
+...

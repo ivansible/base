@@ -1,8 +1,6 @@
 # ivansible.nginx_base
 
-This role performs:
- - action1;
- - action2;
+Common Nginx and web-related handlers and defaults for other roles.
 
 
 ## Requirements
@@ -14,33 +12,75 @@ None
 
 Available variables are listed below, along with default values.
 
-    variable1: 1
-    variable2: 2
+    web_user: www-data
+    web_group: www-data
+Unix user and group for web-based services.
+
+    web_ports: [ 80, 443 ]
+Common HTTP(S) ports for web-based services.
+
+    mail_domain: example.com
+    web_domain: example.com
+Root domain for web-sites served by the remote host.
+
+    web_force_ssl: no
+If yes, configure web servers so that plain HTTP pages redirect to SSL pages.
+
+    nginx_conf_dir: /etc/nginx/conf.d
+Web services should put extra configuration snippets here.
+
+    nginx_site_dir: /etc/nginx/sites-enabled
+Web services should put their site definition files here.
+
+    nginx_ssl_cert: <derived from letsencrypt setting>
+    nginx_ssl_key: <derived from letsencrypt setting>
+    nginx_letsencrypt_cert: ""
+The first two parameters define local path of the SSL certificate and
+private key assgined to the host. If the `letsencrypt_cert` parameter
+is non-empty, then files will point to one of locally installed letsecnrypt
+certificate/key pairs.
+
+If the letsencrypt setting is empty (the default), then nginx certificate
+and key default to so-called `snakeoil` self-signed certificate based off
+the default host name, which is produced by the `ssl-cert` Ubuntu package
+during its installation.
+
+---
+
+    uwsgi_base: /etc/uwsgi-emperor
+    uwsgi_vassals: "{{ uwsgi_base }}/vassals"
+Various `uwsgi` services should put their configurations files here.
+
+    uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
+The name says it all.
+
+
+## Handlers
+
+- restart nginx service
+- restart uwsgi service
 
 
 ## Tags
 
-- `role1_tag1` -- action1
-- `role1_tag2` -- action2
+None
 
 
 ## Dependencies
 
-None
+- [ivansible.lin_base](https://github.com/ivansible/lin-base)
+  -- common ansible handlers and default parameters
 
 
 ## Example Playbook
 
-    - hosts: vagrant-boxes
-      roles:
-         - role: nginx_base
-           variable1: 1
-           variable2: 2
+This role is only intended as a basis for inheritance.
 
 
 ## License
 
 MIT
+
 
 ## Author Information
 
