@@ -22,8 +22,12 @@ This switch enables experimental features. Meaning depends on particular role.
 
     ast_ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
     ast_ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
-Path of SSL certificate and private key files,
-which asterisk will use for TLS conections.
+Paths of SSL certificate and private key files that Asterisk
+will use for incoming SIP TLS and AMI HTTPS conections.
+By default these are inherited from `nginx` certificate defined by the role
+[ivansible.nginx_base](https://github.com/ivansible/nginx-base#variables)
+that in turn defaults to a so-called _snakoil_ certificate,
+which is generated on fly by the `ssl-cert` Ubuntu package.
 
     ast_domains: "{{ [ ansible_fqdn ] }}"
 The list of domains that asterisk will respond to. The first domain is default.
@@ -75,16 +79,21 @@ and other roles will use the _reload_ handler.
 ## Dependencies
 
 This role depends on:
-  - `ivansible.lin_base` -- for some common settings
+  - [ivansible.lin_base](https://github.com/ivansible/lin-base)
+    -- for some common settings
+  - [ivansible.nginx_base](https://github.com/ivansible/nginx-base#variables)
+    -- for default ssl certificate/key file paths
 
 This role is inherited by:
-  - asterisk_core
-  - asterisk_soho
+  - [ivansible.asterisk_core](https://github.com/ivansible/asterisk-core)
+  - [ivansible.asterisk_soho](https://github.com/ivansible/asterisk-soho)
+  - [ivansible.asterisk_providers](https://github.com/ivansible/asterisk-providers)
+  - [ivansible.asterisk_billing](https://github.com/ivansible/asterisk-billing)
 
 
 ## Example Playbook
 
-None
+This role is only intended as a basis for inheritance.
 
 
 ## License

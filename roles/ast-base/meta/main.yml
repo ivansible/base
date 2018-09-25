@@ -1,6 +1,7 @@
 ---
 dependencies:
   - ivansible.lin_base     # for some common settings
+  - ivansible.nginx_base   # for default ssl certificate/key file paths
 
 galaxy_info:
   role_name: asterisk_base
