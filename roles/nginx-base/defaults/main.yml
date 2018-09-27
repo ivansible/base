@@ -32,4 +32,31 @@ nginx_def_site_dir: /var/www/dummy
 uwsgi_base: /etc/uwsgi-emperor
 uwsgi_vassals: "{{ uwsgi_base }}/vassals"
 uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
+
+#
+# nginx configuration snippets
+#
+nginx_conf_listen_http:
+  listen 80;  listen [::]:80;
+nginx_conf_listen_ssl:
+  listen 443 ssl http2;  listen [::]:443 ssl http2;
+nginx_conf_listen:
+  "{{ nginx_conf_listen_http }} {{ nginx_conf_listen_ssl }}"
+
+nginx_conf_favicon:
+  location = /favicon.ico { alias {{ nginx_def_site_dir }}/favicon.ico; }
+nginx_conf_robots:
+  location = /robots.txt { alias {{ nginx_def_site_dir }}/robots.txt; }
+
+nginx_conf_pubcookie_server: ""
+
+nginx_conf_auth: ""
+
+nginx_conf_proxy_params: |
+  proxy_redirect off;
+  proxy_set_header Host       $host;
+  proxy_set_header X-Real-IP  $remote_addr;
+  proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto  $scheme;
+
 ...
