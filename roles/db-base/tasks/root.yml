@@ -1,0 +1,5 @@
+---
+- name: ivansible.db_base root action 1
+  debug:
+    msg: action 1
+...
