@@ -1,8 +1,7 @@
 # ivansible.db_base
 
-This role performs:
- - action1;
- - action2;
+This role provides database connection parameters for other asterisk roles.
+It is intended to be inherited only and does not have tasks or handlers.
 
 
 ## Requirements
@@ -14,14 +13,20 @@ None
 
 Available variables are listed below, along with default values.
 
-    variable1: 1
-    variable2: 2
+    srv_pg_host: localhost
+    srv_pg_port: 5432
+    srv_pg_admin_password: please_change
+Connection parameters for PostgreSQL
 
+    mongodb_host: localhost
+    mongodb_port: 27017
+    mongodb_admin_username: admin
+    mongodb_admin_password: please_change
+Connection parameters for MongoDB
 
 ## Tags
 
-- `role1_tag1` -- action1
-- `role1_tag2` -- action2
+None
 
 
 ## Dependencies
@@ -31,11 +36,7 @@ None
 
 ## Example Playbook
 
-    - hosts: vagrant-boxes
-      roles:
-         - role: db_base
-           variable1: 1
-           variable2: 2
+None
 
 
 ## License

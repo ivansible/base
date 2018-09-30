@@ -1,4 +1,13 @@
 ---
 # defaults for ivansible.db_base
 # inherited by all database clients
+
+mongodb_host: localhost
+mongodb_port: 27017
+mongodb_admin_username: admin
+mongodb_admin_password: please_change
+
+srv_pg_host: localhost
+srv_pg_port: 5432
+srv_pg_admin_password: please_change
 ...

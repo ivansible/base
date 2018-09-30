@@ -17,7 +17,8 @@ galaxy_info:
 
   galaxy_tags:
     - linux
-    - ansible
+    - database
+    - common
 
   github_branch: master
 ...
