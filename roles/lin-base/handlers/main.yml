@@ -7,6 +7,15 @@
   command: systemd-tmpfiles --create
   become: yes
 
+- name: reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  become: yes
+
+- name: reload ubuntu firewall
+  command: ufw reload
+  become: yes
+
 - name: restart ssh service
   systemd:
     name: sshd
