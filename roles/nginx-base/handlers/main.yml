@@ -8,6 +8,12 @@
     state: restarted
   become: yes
 
+- name: reload nginx service
+  systemd:
+    name: nginx
+    state: reloaded
+  become: yes
+
 - name: restart uwsgi service
   systemd:
     name: uwsgi-emperor
