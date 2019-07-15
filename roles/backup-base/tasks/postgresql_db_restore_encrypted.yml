@@ -19,7 +19,7 @@
         - name: in-place decrypt database dump
           script: scripts/gz-decrypt.sh "{{ temp_aes_pgdump.path }}"
           environment:
-            CRYPTOPASS: "{{ backup_secret }}"
+            AESPASS: "{{ backup_secret }}"
       rescue:
         - fail:
             msg: "please provide correct backup_secret for {{ backup_url | basename }}"

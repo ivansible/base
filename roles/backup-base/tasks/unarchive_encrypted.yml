@@ -27,7 +27,7 @@
         - name: inplace decrypt the tarball
           script: scripts/gz-decrypt.sh "{{ temp_aes_tarball.path }}"
           environment:
-            CRYPTOPASS: "{{ backup_secret }}"
+            AESPASS: "{{ backup_secret }}"
       rescue:
         - fail:
             msg: "please provide correct backup_secret for {{ backup_url | basename }}"

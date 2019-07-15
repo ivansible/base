@@ -9,8 +9,8 @@ CIPHER="aes-256-cbc"
 # openssl 1.0.x uses MD5 but openssl 1.1.x uses SHA256
 MDSUM="sha256"
 
-if [ -z "$INFILE" ] || [ -z "$CRYPTOPASS" ]; then
-    echo "usage: CRYPTOPASS=<secret> $(basename "$0") <file> [<outfile> | -]" 1>&2
+if [ -z "$INFILE" ] || [ -z "$AESPASS" ]; then
+    echo "usage: AESPASS=<secret> $(basename "$0") <file> [<outfile> | -]" 1>&2
     echo "note: if <outfile> is not provided, input file is decrypted in-place" 1>&2
     exit 1
 fi
@@ -19,9 +19,9 @@ if [ -z "$OUTFILE" ]; then
     OUTFILE="$INFILE"
 fi
 
-export CRYPTOPASS
+export AESPASS
 
-DEC_ARGS="$CIPHER -d -salt -base64 -pass env:CRYPTOPASS -md $MDSUM"
+DEC_ARGS="$CIPHER -d -salt -base64 -pass env:AESPASS -md $MDSUM"
 
 if [ "$INFILE" = '-' ]; then
     # shellcheck disable=SC2086

@@ -10,8 +10,8 @@ CIPHER="aes-256-cbc"
 # see https://github.com/fastlane/fastlane/issues/9542
 MDSUM="sha256"
 
-if [ -z "$INFILE" ] || [ -z "$CRYPTOPASS" ]; then
-    echo "usage: CRYPTOPASS=<secret> $(basename "$0") <file> [<file>.gz.enc | -]" 1>&2
+if [ -z "$INFILE" ] || [ -z "$AESPASS" ]; then
+    echo "usage: AESPASS=<secret> $(basename "$0") <file> [<file>.gz.enc | -]" 1>&2
     echo "note: if <outfile> is not provided, input file is encrypted to <file>.gz.enc" 1>&2
     exit 1
 fi
@@ -20,9 +20,9 @@ if [ -z "$OUTFILE" ]; then
     OUTFILE="$INFILE.gz.aes"
 fi
 
-export CRYPTOPASS
+export AESPASS
 
-ENC_ARGS="$CIPHER -e -salt -base64 -pass env:CRYPTOPASS -md $MDSUM"
+ENC_ARGS="$CIPHER -e -salt -base64 -pass env:AESPASS -md $MDSUM"
 
 if [ "$INFILE" = '-' ]; then
     # shellcheck disable=SC2086
