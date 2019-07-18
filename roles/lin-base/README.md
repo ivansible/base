@@ -22,7 +22,7 @@ TBD
     lin_ssh_port: 22
 TBD
 
-    lin_ssh_keys_files: <playbook_dir>/files/lin-ssh-*.key'
+    lin_ssh_keys_files: <playbook_dir>/files/keys/ssh-*.key'
 TBD
 
 ---
