@@ -1,6 +1,8 @@
 ---
 # defaults file for ivansible.nginx_base
 
+use_sslh: false
+
 web_user: www-data
 web_group: www-data
 
