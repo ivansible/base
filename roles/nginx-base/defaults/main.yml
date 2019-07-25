@@ -40,10 +40,14 @@ uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 #
 nginx_conf_listen_http:
   listen 80;  listen [::]:80;
+nginx_conf_listen_ssl_ipv4:
+  listen {{ use_sslh | bool | ternary('127.0.0.1:', '') }}443 ssl http2
+nginx_conf_listen_ssl_ipv6:
+  listen {{ use_sslh | bool | ternary('[::1]','[::]') }}:443 ssl http2
 nginx_conf_listen_ssl:
-  listen 443 ssl http2;  listen [::]:443 ssl http2;
+  "{{ nginx_conf_listen_ssl_ipv4 }};  {{ nginx_conf_listen_ssl_ipv6 }};"
 nginx_conf_listen:
-  "{{ nginx_conf_listen_http }} {{ nginx_conf_listen_ssl }}"
+  "{{ nginx_conf_listen_http }}  {{ nginx_conf_listen_ssl }}"
 
 nginx_conf_favicon:
   location = /favicon.ico { alias {{ nginx_def_site_dir }}/favicon.ico; }
