@@ -4,7 +4,9 @@
 
 # This must be the first handler
 - name: update system temp files
-  command: systemd-tmpfiles --create
+  # exclude /dev as a workaround for below openvz error:
+  # "Failed to openat(/dev/simfs): Operation not permitted"
+  command: systemd-tmpfiles --create --exclude-prefix /dev
   become: yes
 
 - name: reload systemd daemon
