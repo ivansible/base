@@ -1,5 +1,5 @@
 ---
-# handlers file for ivansible.backup_base
+# handlers for ivansible.backup_base
 
 - name: remove temporary encrypted database dump
   file:

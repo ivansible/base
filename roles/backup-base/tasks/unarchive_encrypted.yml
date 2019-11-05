@@ -49,6 +49,6 @@
   # end of block
   become: yes
   when: creates is not defined
-        or flag_file.stat.exists == false
+        or not flag_file.stat.exists
   tags: backup_block_unarchive
 ...
