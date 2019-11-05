@@ -26,6 +26,7 @@
 
 # This must be the last handler
 - name: remove temporary play files
+  # noqa 302
   shell: rm -rfv {{ temp_file }}.*
   become: true
   register: _rm_temp
