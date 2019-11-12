@@ -8,6 +8,8 @@
   # "Failed to openat(/dev/simfs): Operation not permitted"
   command: systemd-tmpfiles --create --exclude-prefix /dev
   become: yes
+  # systemd-tmpfiles files on github runners
+  when: lin_systemd_tmpfiles |bool
 
 - name: reload systemd daemon
   systemd:
