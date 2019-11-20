@@ -11,6 +11,9 @@ lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 lin_use_firewall: true
 lin_systemd_tmpfiles: true
 
+lin_use_docker: "{{ ansible_kernel is version('3.10', '>')
+                    and ansible_virtualization_type != 'docker' }}"
+
 systemd_dir: /etc/systemd/system
 local_bin: /usr/local/bin
 ...
