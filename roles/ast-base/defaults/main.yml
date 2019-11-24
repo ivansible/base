@@ -8,6 +8,8 @@ ast_reset: no
 # enable experimental features
 ast_experimental: no
 
+ast_restart_delay: 5
+
 
 ast_pg_host: localhost
 ast_pg_port: 5432
