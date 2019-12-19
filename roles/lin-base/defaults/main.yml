@@ -8,6 +8,7 @@ lin_use_ssh: true
 lin_ssh_port: 22
 lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 
+lin_use_syslog: true
 lin_use_firewall: true
 lin_systemd_tmpfiles: true
 

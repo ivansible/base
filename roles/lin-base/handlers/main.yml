@@ -7,24 +7,30 @@
   # exclude /dev as a workaround for below openvz error:
   # "Failed to openat(/dev/simfs): Operation not permitted"
   command: systemd-tmpfiles --create --exclude-prefix /dev
-  become: yes
+  become: true
   # systemd-tmpfiles files on github runners
   when: lin_systemd_tmpfiles |bool
 
 - name: reload systemd daemon
   systemd:
-    daemon_reload: yes
-  become: yes
+    daemon_reload: true
+  become: true
 
 - name: reload ubuntu firewall
   command: ufw reload
-  become: yes
+  become: true
 
 - name: restart ssh service
   systemd:
     name: sshd
     state: restarted
-  become: yes
+  become: true
+
+- name: restart syslog service
+  systemd:
+    name: syslog
+    state: restarted
+  become: true
 
 # This must be the last handler
 - name: remove temporary play files
