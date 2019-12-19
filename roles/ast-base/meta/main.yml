@@ -4,7 +4,7 @@ dependencies:
   - ivansible.nginx_base   # for default ssl certificate/key file paths
 
 galaxy_info:
-  role_name: asterisk_base
+  role_name: ast_base
   author: "Ivan Andreev"
   description: "common handlers and defaults for asterisk roles"
   company: "IvanSible"

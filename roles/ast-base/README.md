@@ -1,4 +1,4 @@
-# ivansible.asterisk_base
+# ivansible.ast_base
 
 This role provides common defaults and handlers for asterisk roles.
 It is intended to be inherited only and does not have `main.yml`.
@@ -85,10 +85,10 @@ This role depends on:
     -- for default ssl certificate/key file paths
 
 This role is inherited by:
-  - [ivansible.asterisk_core](https://github.com/ivansible/asterisk-core)
-  - [ivansible.asterisk_soho](https://github.com/ivansible/asterisk-soho)
-  - [ivansible.asterisk_providers](https://github.com/ivansible/asterisk-providers)
-  - [ivansible.asterisk_billing](https://github.com/ivansible/asterisk-billing)
+  - [ivansible.ast_core](https://github.com/ivansible/ast-core)
+  - [ivansible.ast_soho](https://github.com/ivansible/ast-soho)
+  - [ivansible.ast_providers](https://github.com/ivansible/ast-providers)
+  - [ivansible.ast_billing](https://github.com/ivansible/ast-billing)
 
 
 ## Example Playbook
@@ -102,4 +102,4 @@ MIT
 
 ## Author Information
 
-Created in 2018 by [IvanSible](https://github.com/ivansible)
+Created in 2018-2020 by [IvanSible](https://github.com/ivansible)

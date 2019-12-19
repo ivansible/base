@@ -1,5 +1,5 @@
 ---
-# handlers file for ivansible.asterisk_base
+# handlers for ivansible.ast_base
 # inherited by all asterisk roles
 
 - name: restart asterisk service (nowait)
@@ -14,7 +14,7 @@
   wait_for:
     timeout: "{{ ast_restart_delay }}"
 
-# please use either restart (asterisk_core) or reload (other asterisk roles)
+# please use either restart (ast_core) or reload (other asterisk roles), don't mix
 - name: reload asterisk service
   systemd:
     name: asterisk

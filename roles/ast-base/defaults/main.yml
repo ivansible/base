@@ -1,12 +1,12 @@
 ---
-# defaults file for ivansible.asterisk_base
+# defaults for ivansible.ast_base
 # inherited by all asterisk roles
 
 # reset config to vanilla before adjusting?
-ast_reset: no
+ast_reset: false
 
 # enable experimental features
-ast_experimental: no
+ast_experimental: false
 
 ast_restart_delay: 5
 
@@ -27,14 +27,14 @@ ast_ssl_key: "{{ nginx_ssl_key }}"
 ast_domains: "{{ [ ansible_fqdn ] }}"
 
 
-ast_dialplan_hints: yes
+ast_dialplan_hints: true
 
 ast_default_language: en
 
 ast_default_codecs: "g729,g722,ulaw,alaw"
 
 # by default qualify timeout is 1 second (yes)
-ast_qualify_value: "yes"
+ast_qualify_value: 'yes'
 
 
 ast_local_dir: /usr/local/asterisk
