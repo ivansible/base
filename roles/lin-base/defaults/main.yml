@@ -1,15 +1,17 @@
 ---
 # lin-base/handlers: common ansible defaults used in other roles
 
-hide_secrets: yes
-allow_sysctl: yes
+hide_secrets: true
+allow_sysctl: true
+
+# choices: ufw ferm none
+lin_firewall: ferm
 
 lin_use_ssh: true
 lin_ssh_port: 22
 lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 
 lin_use_syslog: true
-lin_use_firewall: true
 lin_systemd_tmpfiles: true
 
 lin_use_docker: "{{ ansible_kernel is version('3.10', '>')

@@ -13,10 +13,10 @@ None
 Available variables are listed below, along with default values.
 
 
-    hide_secrets: yes
+    hide_secrets: true
 TBD
 
-    allow_sysctl: yes
+    allow_sysctl: true
 TBD
 
     lin_ssh_port: 22
