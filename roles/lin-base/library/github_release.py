@@ -152,7 +152,7 @@ import time
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import ensure_text
-from ansible.modules.net_tools.basics.uri import uri
+from ansible.module_utils.urls import fetch_url
 
 
 def main():
@@ -208,27 +208,17 @@ def main():
     for retry in range(retries):
         if only_latest and release != 'latest':
             status = ok_codes[0]
-            msg = 'OK (skip)'
-            res = dict(msg=msg, status=status)
+            info = dict(msg='OK (skip)', url=url_orig, status=status)
             break
-
-        module.params['src'] = None
-        module.params['follow_redirects'] = 'safe'
-        module.params['unix_socket'] = None
-
-        res, _, _ = uri(module, url_orig,
-                        method='HEAD',
-                        headers={}, socket_timeout=30,
-                        body=None, body_format='raw',
-                        dest=None)
-        status = int(res['status'])
-        msg = res.get('msg', '')
+        _, info = fetch_url(module, url_orig, method='HEAD')
+        status = int(info['status'])
         if status in ok_codes:
             break
         time.sleep(delay)
         delay = delay * 2
 
-    url = res.get('url', '') or url_orig
+    url = info.get('url', '') or url_orig
+    msg = info.get('msg', '')
     result = dict(status=status, url=url, retries=retry + 1)
     if url != url_orig:
         result['url_orig'] = url_orig
