@@ -13,11 +13,11 @@ None
 
 Available variables are listed below, along with default values.
 
-    ast_reset: no
-If yes, the role will reset configuration before adjusting particular options.
-If no, only adjustments will be performed.
+    ast_reset: false
+If true, the role will reset configuration before adjusting particular options.
+If false, only adjustments will be performed.
 
-    ast_experimental: no
+    ast_experimental: false
 This switch enables experimental features. Meaning depends on particular role.
 
     ast_ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
@@ -32,7 +32,7 @@ which is generated on fly by the `ssl-cert` Ubuntu package.
     ast_domains: "{{ [ ansible_fqdn ] }}"
 The list of domains that asterisk will respond to. The first domain is default.
 
-    ast_dialplan_hints: yes
+    ast_dialplan_hints: true
 Allows or disables dependant roles to use `peer is alive` hints in dialplan.
 
     ast_default_language: en
@@ -42,10 +42,9 @@ Meaning depends on a particular role.
     ast_default_codecs: g729,g722,ulaw,alaw
 Comma-delimited list of codecs. Meaning depends on a particular role.
 
-    ast_qualify_value: "yes"
-
-By default qualify timeout is 1 second (`yes`). However, sometimes you need
-to increase the timeout, e.g. set this value to `3000` (milliseconds).
+    ast_qualify_value: 'yes'
+By default qualify timeout is 1 second (literal `yes`). However, sometimes
+you need to increase the timeout, eg. set this value to `3000` (milliseconds).
 
     ast_pg_host: localhost
     ast_pg_port: 5432

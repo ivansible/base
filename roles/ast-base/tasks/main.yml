@@ -1,4 +1,4 @@
 ---
 # role asterisk_base has no tasks in main.yml
-# only defaults and handlers are inherited
+# only defaults and handlers, to be inherited
 ...

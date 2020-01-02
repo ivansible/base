@@ -1,6 +1,5 @@
 ---
-# defaults for ivansible.ast_base
-# inherited by all asterisk roles
+# ast_base defaults are inherited by all asterisk roles
 
 # reset config to vanilla before adjusting?
 ast_reset: false
@@ -31,9 +30,9 @@ ast_dialplan_hints: true
 
 ast_default_language: en
 
-ast_default_codecs: "g729,g722,ulaw,alaw"
+ast_default_codecs: 'g729,g722,ulaw,alaw'
 
-# by default qualify timeout is 1 second (yes)
+# by default qualify timeout is 1 second (literal 'yes')
 ast_qualify_value: 'yes'
 
 

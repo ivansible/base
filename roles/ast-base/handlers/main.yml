@@ -1,23 +1,23 @@
 ---
-# handlers for ivansible.ast_base
-# inherited by all asterisk roles
+# ast_base handlers are inherited by all asterisk roles
 
 - name: restart asterisk service (nowait)
   listen: restart asterisk service
   systemd:
     name: asterisk
     state: restarted
-  become: yes
+  become: true
 
 - name: restart asterisk service (delay)
   listen: restart asterisk service
   wait_for:
     timeout: "{{ ast_restart_delay }}"
 
-# please use either restart (ast_core) or reload (other asterisk roles), don't mix
+# Note: please use either restart (ast_core) or reload (other asterisk roles)
+#       don't mix!
 - name: reload asterisk service
   systemd:
     name: asterisk
     state: reloaded
-  become: yes
+  become: true
 ...
