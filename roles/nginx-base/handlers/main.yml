@@ -1,22 +1,22 @@
 ---
-# nginx_base/handlers: common nginx handlers for other roles
+# nginx_base/handlers.yml: common nginx handlers for other roles
 # Note: handlers will be run in the order they appear in this file
 
 - name: restart nginx service
   systemd:
     name: nginx
     state: restarted
-  become: yes
+  become: true
 
 - name: reload nginx service
   systemd:
     name: nginx
     state: reloaded
-  become: yes
+  become: true
 
 - name: restart uwsgi service
   systemd:
     name: uwsgi-emperor
     state: restarted
-  become: yes
+  become: true
 ...

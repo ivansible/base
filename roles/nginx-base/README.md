@@ -16,15 +16,15 @@ Available variables are listed below, along with default values.
     web_group: www-data
 Unix user and group for web-based services.
 
-    web_ports: [ 80, 443 ]
+    web_ports: [80, 443]
 Common HTTP(S) ports for web-based services.
 
     mail_domain: example.com
     web_domain: example.com
 Root domain for web-sites served by the remote host.
 
-    web_force_ssl: no
-If yes, configure web servers so that plain HTTP pages redirect to SSL pages.
+    web_force_ssl: false
+If true, configure web servers so that insecure HTTP pages redirect to SSL.
 
     nginx_conf_dir: /etc/nginx/conf.d
 Web services should put extra configuration snippets here.
@@ -40,10 +40,10 @@ private key assgined to the host. If the `letsencrypt_cert` parameter
 is non-empty, then files will point to one of locally installed letsecnrypt
 certificate/key pairs.
 
-If the letsencrypt setting is empty (the default), then nginx certificate
-and key default to so-called `snakeoil` self-signed certificate based off
-the default host name, which is produced by the `ssl-cert` Ubuntu package
-during its installation.
+In case the letsencrypt setting is empty (the default), the nginx
+certificate and key will default to so-called `snakeoil` self-signed
+certificate, which is based off the default host name produced by the
+`ssl-cert` Ubuntu package during its installation.
 
 ---
 
@@ -81,7 +81,6 @@ This role is only intended as a basis for inheritance.
 
 MIT
 
-
 ## Author Information
 
-Created in 2018 by [IvanSible](https://github.com/ivansible)
+Created in 2018-2020 by [IvanSible](https://github.com/ivansible)
