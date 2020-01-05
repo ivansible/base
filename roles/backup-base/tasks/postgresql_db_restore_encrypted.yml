@@ -13,7 +13,7 @@
         url: "{{ backup_url }}"
         dest: "{{ temp_aes_pgdump.path }}"
         mode: 0600
-        force: yes  # overwrite temporary file
+        force: true  # overwrite temporary file
 
     - block:
         - name: in-place decrypt database dump
@@ -41,6 +41,6 @@
         state: absent
 
   # end of block
-  become: yes
+  become: true
   tags: backup_block_db_restore
 ...

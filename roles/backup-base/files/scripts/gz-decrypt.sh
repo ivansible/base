@@ -9,9 +9,9 @@ CIPHER="aes-256-cbc"
 # openssl 1.0.x uses MD5 but openssl 1.1.x uses SHA256
 MDSUM="sha256"
 
-if [ -z "$INFILE" -o -z "$CRYPTOPASS" ]; then
-    echo "usage: CRYPTOPASS=<secret> $(basename $0) <file> [<outfile> | -]" 1>&2
-    echo "note: if <outfile> is not provided, input file is decrypted in-place"
+if [ -z "$INFILE" ] || [ -z "$CRYPTOPASS" ]; then
+    echo "usage: CRYPTOPASS=<secret> $(basename "$0") <file> [<outfile> | -]" 1>&2
+    echo "note: if <outfile> is not provided, input file is decrypted in-place" 1>&2
     exit 1
 fi
 
@@ -23,19 +23,22 @@ export CRYPTOPASS
 
 DEC_ARGS="$CIPHER -d -salt -base64 -pass env:CRYPTOPASS -md $MDSUM"
 
-if [ "$INFILE" = "-" ]; then
+if [ "$INFILE" = '-' ]; then
+    # shellcheck disable=SC2086
     openssl $DEC_ARGS | gzip -cd
-elif [ "$OUTFILE" = "-" ]; then
+elif [ "$OUTFILE" = '-' ]; then
+    # shellcheck disable=SC2086
     openssl $DEC_ARGS < "$INFILE" | gzip -cd
 else
     TMPFILE="$(mktemp)"
 
     function finish {
-        rm -rf $TMPFILE
+        rm -rf "$TMPFILE"
     }
 
     trap finish EXIT
 
+    # shellcheck disable=SC2086
     openssl $DEC_ARGS < "$INFILE" | gzip -cd > "$TMPFILE" && \
     cat < "$TMPFILE" > "$OUTFILE"
 fi

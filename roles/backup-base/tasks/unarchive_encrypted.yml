@@ -2,8 +2,8 @@
 - name: check whether flag file exists
   stat:
     path: "{{ creates }}"
-    get_checksum: no
-  become: yes
+    get_checksum: false
+  become: true
   register: flag_file
   when: creates is defined
   tags: backup_block_unarchive
@@ -21,7 +21,7 @@
         url: "{{ backup_url }}"
         dest: "{{ temp_aes_tarball.path }}"
         mode: 0600
-        force: yes  # overwrite temporary file
+        force: true  # overwrite temporary file
 
     - block:
         - name: inplace decrypt the tarball
@@ -35,7 +35,7 @@
     - name: unarchive decrypted tarball
       unarchive:
         src: "{{ temp_aes_tarball.path }}"
-        remote_src: yes
+        remote_src: true
         dest: "{{ dest }}"
         owner: "{{ owner | default(omit) }}"
         group: "{{ group | default(omit) }}"
@@ -47,7 +47,7 @@
         state: absent
 
   # end of block
-  become: yes
+  become: true
   when: creates is not defined
         or not flag_file.stat.exists
   tags: backup_block_unarchive

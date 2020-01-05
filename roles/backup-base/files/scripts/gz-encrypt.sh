@@ -10,9 +10,9 @@ CIPHER="aes-256-cbc"
 # see https://github.com/fastlane/fastlane/issues/9542
 MDSUM="sha256"
 
-if [ -z "$INFILE" -o -z "$CRYPTOPASS" ]; then
-    echo "usage: CRYPTOPASS=<secret> $(basename $0) <file> [<file>.gz.enc | -]" 1>&2
-    echo "note: if <outfile> is not provided, input file is encrypted to <file>.gz.enc"
+if [ -z "$INFILE" ] || [ -z "$CRYPTOPASS" ]; then
+    echo "usage: CRYPTOPASS=<secret> $(basename "$0") <file> [<file>.gz.enc | -]" 1>&2
+    echo "note: if <outfile> is not provided, input file is encrypted to <file>.gz.enc" 1>&2
     exit 1
 fi
 
@@ -24,19 +24,22 @@ export CRYPTOPASS
 
 ENC_ARGS="$CIPHER -e -salt -base64 -pass env:CRYPTOPASS -md $MDSUM"
 
-if [ "$INFILE" = "-" ]; then
+if [ "$INFILE" = '-' ]; then
+    # shellcheck disable=SC2086
     gzip -c | openssl $ENC_ARGS
-elif [ "$OUTFILE" = "-" ]; then
+elif [ "$OUTFILE" = '-' ]; then
+    # shellcheck disable=SC2086
     gzip -c < "$INFILE" | openssl $ENC_ARGS
 else
     TMPFILE="$(mktemp)"
 
     function finish {
-        rm -rf $TMPFILE
+        rm -rf "$TMPFILE"
     }
 
     trap finish EXIT
 
+    # shellcheck disable=SC2086
     gzip -c < "$INFILE" | openssl $ENC_ARGS > "$TMPFILE" && \
     cat < "$TMPFILE" > "$OUTFILE"
 fi

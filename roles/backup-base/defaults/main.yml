@@ -1,5 +1,5 @@
 ---
-# defaults file for ivansible.backup_base
+# defaults for ivansible.backup_base
 
 backup_secret: secret-123
 ...

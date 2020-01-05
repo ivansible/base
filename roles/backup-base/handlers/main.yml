@@ -5,11 +5,11 @@
   file:
     path: "{{ temp_aes_pgdump.path }}"
     state: absent
-  become: yes
+  become: true
 
 - name: remove temporary encrypted tarball
   file:
     path: "{{ temp_aes_tarball.path }}"
     state: absent
-  become: yes
+  become: true
 ...

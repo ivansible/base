@@ -15,7 +15,8 @@
       loop:
         - gz-encrypt.sh
         - gz-decrypt.sh
+
   # end of block
-  become: yes
+  become: true
   tags: backup_block_install
 ...
