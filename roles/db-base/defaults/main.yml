@@ -1,4 +1,4 @@
 ---
-# defaults file for ivansible.db_base
-
+# defaults for ivansible.db_base
+# inherited by all database clients
 ...
