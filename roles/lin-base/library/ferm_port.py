@@ -107,25 +107,43 @@ def write_changes(module, path, b_lines, reload=True):
                              rc=rc, stdout=stdout, stderr=stderr)
 
 
-def present(module, path, line, reload=True):
+def present(module, path, line, comment, regexp, reload=True):
 
     with open(path, 'rb') as f:
-        b_lines = f.readlines()
+        b_lines_orig = f.readlines()
 
     diff = dict(before='', after='')
     if module._diff:
         diff['before'] = to_native(b''.join(b_lines))
 
     b_line = to_bytes(line, errors='surrogate_or_strict')
+    b_comment = None
+    if comment is not None:
+       b_comment = to_bytes(comment, errors='surrogate_or_strict').rstrip(b'\r\n')
+    b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
     b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
+    b_lines = []
+    n_removed = 0
     found = False
     changed = False
     msg = ''
 
-    for lineno, b_cur_line in enumerate(b_lines):
-        if b_line == b_cur_line.rstrip(b'\r\n'):
-            found = True
-            break
+    for lineno, b_cur_line in enumerate(b_lines_orig):
+        match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
+        if match:
+            if found:
+                # remove duplicates
+                n_removed += 1
+            else:
+                found = True
+                if b_comment is None or b_comment == match.group(2):
+                    b_lines.append(b_cur_line)
+                else:
+                    b_lines.append(b'%s # %s%s' % (b_line, b_comment, b_linesep))
+                    changed = True
+                    msg = 'comment updated'
+        else:
+            b_lines.append(b_cur_line)
 
     if not found:
         # Add it to the end of the file
@@ -134,7 +152,15 @@ def present(module, path, line, reload=True):
             b_lines.append(b_linesep)
         b_lines.append(b_line + b_linesep)
         msg = 'line added'
+        if n_removed > 0:
+            msg += ' (%d duplicate(s) removed)' % n_removed
         changed = True
+    elif n_removed > 0:
+        if changed:
+            msg += ' (%d duplicate(s) removed)' % n_removed
+        else:
+            msg = '%d duplicate(s) removed' % n_removed
+            changed = True
 
     if module._diff:
         diff['after'] = to_native(b''.join(b_lines))
@@ -148,7 +174,7 @@ def present(module, path, line, reload=True):
     module.exit_json(changed=changed, msg=msg, diff=diff)
 
 
-def absent(module, path, line, reload=True):
+def absent(module, path, regexp, reload=True):
 
     with open(path, 'rb') as f:
         b_lines = f.readlines()
@@ -157,10 +183,10 @@ def absent(module, path, line, reload=True):
     if module._diff:
         diff['before'] = to_native(b''.join(b_lines))
 
-    b_line = to_bytes(line, errors='surrogate_or_strict')
+    b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
     orig_len = len(b_lines)
 
-    b_lines = [l for l in b_lines if b_line != l.rstrip(b'\r\n')]
+    b_lines = [l for l in b_lines if not b_regex.match(l.rstrip(b'\r\n'))]
 
     found = orig_len - len(b_lines)
     changed = found > 0
@@ -180,6 +206,7 @@ def main():
             port=dict(type='str', required=True),
             proto=dict(type='str', default='any', choices=['tcp', 'udp', 'any'],
                        aliases=['protocol']),
+            comment=dict(type='str'),
             domain=dict(type='str', default='external',
                         choices=['external', 'internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
@@ -200,6 +227,8 @@ def main():
         module.fail_json(rc=256, msg='Invalid port argument')
 
     line = port if proto == 'any' else '%s/%s' % (port, proto)
+    regexp = r'^\s*(%s)\s*(?:#+\s*(.*)\s*)?$' % line
+    comment = module.params['comment']
 
     domain = module.params['domain']
     domain_to_extension = {
@@ -213,9 +242,9 @@ def main():
 
     reload = module.params['reload']
     if module.params['state'] == 'present':
-        present(module, path, line, reload)
+        present(module, path, line, comment, regexp, reload)
     else:
-        absent(module, path, line, reload)
+        absent(module, path, regexp, reload)
 
 
 if __name__ == '__main__':
