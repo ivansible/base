@@ -21,7 +21,9 @@ version_added: "2.8"
 options:
   host:
     description:
-      - IPv4 or IPv6 address or a DNS hostname.
+      - Either IPv4/IPv6 address or a DNS hostname,
+        optionally followed by slash and C(prefixlen) (overrides the C(prefixlen) parameter),
+        then optionally followed by slash and C(proto) (overrides the C(proto) parameter).
     type: str
     required: true
   proto:
@@ -31,6 +33,11 @@ options:
     type: str
     choices: [ ipv4, ipv6, any ]
     default: any
+    aliases: [ protocol ]
+  prefixlen:
+    description:
+      - CIDR subnet prefix length to apply to the host address.
+    type: int
   domain:
     description:
       - C(internal) add host to the internal list;
@@ -176,6 +183,7 @@ def main():
         argument_spec=dict(
             host=dict(type='str', required=True),
             proto=dict(type='str', default='any', choices=['ipv4', 'ipv6', 'any']),
+            prefixlen=dict(type='int'),
             domain=dict(type='str', default='internal', choices=['internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             reload=dict(type='bool', default=True),
@@ -186,14 +194,23 @@ def main():
 
     host = module.params['host']
     proto = module.params['proto']
-    split = re.match('^(.+)/(ipv4|ipv6|any)$', host)
+    prefixlen = module.params['prefixlen']
+
+    split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
     if split:
         host, proto = split.group(1), split.group(2)
+    split = re.match(r'^(.+)/(\d+)$', host)
+    if split:
+        host, prefixlen = split.group(1), int(split.group(2))
 
-    if proto == 'any':
-        line = host
-    else:
-        line = '%s/%s' % (host, proto)
+    if not re.match(r'^((\d+\.){3}\d+|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$', host):
+        module.fail_json(rc=256, msg='Invalid host argument')
+
+    line = host
+    if prefixlen is not None:
+        line = '%s/%d' % (line, prefixlen)
+    if proto != 'any':
+        line = '%s/%s' % (line, proto)
 
     domain = module.params['domain']
     domain_to_extension = {

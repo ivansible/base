@@ -21,15 +21,17 @@ version_added: "2.8"
 options:
   port:
     description:
-      - Numeric port number or dash-separated port range.
+      - Numeric port number or dash-separated port range,
+        optionally followed by slash and C(proto) (overrides the C(proto) parameter).
     type: str
     required: true
   proto:
     description:
-      - Port protocol.
+      - Limits port to given protocol.
     type: str
     choices: [ tcp, udp, any ]
     default: any
+    aliases: [ protocol ]
   domain:
     description:
       - C(external) opens the port for all hosts;
@@ -176,7 +178,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             port=dict(type='str', required=True),
-            proto=dict(type='str', default='any', choices=['tcp', 'udp', 'any']),
+            proto=dict(type='str', default='any', choices=['tcp', 'udp', 'any'],
+                       aliases=['protocol']),
             domain=dict(type='str', default='external',
                         choices=['external', 'internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
@@ -188,16 +191,15 @@ def main():
 
     port = module.params['port']
     proto = module.params['proto']
-    split = re.match('^([^/]+)/(tcp|udp|ip|any)$', port)
+
+    split = re.match(r'^([^/]+)/(tcp|udp|any)$', port)
     if split:
         port, proto = split.group(1), split.group(2)
 
-    if not re.match('^[0-9]+(-[0-9]+)?$', port):
+    if not re.match(r'^[0-9]+(-[0-9]+)?$', port):
         module.fail_json(rc=256, msg='Invalid port argument')
-    if proto == 'any' or proto == 'ip':
-        line = port
-    else:
-        line = '%s/%s' % (port, proto)
+
+    line = port if proto == 'any' else '%s/%s' % (port, proto)
 
     domain = module.params['domain']
     domain_to_extension = {
