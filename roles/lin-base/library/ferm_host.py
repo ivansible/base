@@ -21,10 +21,13 @@ version_added: "2.8"
 options:
   host:
     description:
-      - Either IPv4/IPv6 address or a DNS hostname,
-        optionally followed by slash and C(prefixlen) (overrides the C(prefixlen) parameter),
-        then optionally followed by slash and C(proto) (overrides the C(proto) parameter).
-    type: str
+      - List of host/net descriptors, where each item is
+        either IPv4/IPv6 address or a DNS hostname,
+        optionally followed by slash and C(prefixlen)
+        (overrides the C(prefixlen) parameter),
+        then optionally followed by slash and C(proto)
+        (overrides the C(proto) parameter).
+    type: list
     required: true
   proto:
     description:
@@ -99,15 +102,15 @@ def ferm_config(module, filename):
     return to_native(b_path, errors='surrogate_or_strict')
 
 
-def write_changes(module, path, b_lines, reload=True):
+def write_changes(module, config_path, b_lines):
 
     tmpfd, tmpfile = tempfile.mkstemp()
     with os.fdopen(tmpfd, 'wb') as f:
         f.writelines(b_lines)
 
-    module.atomic_move(tmpfile, path, unsafe_writes=False)
+    module.atomic_move(tmpfile, config_path, unsafe_writes=False)
 
-    if reload:
+    if module.params['reload']:
         cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
         rc, stdout, stderr = module.run_command(cmd)
         if rc:
@@ -115,103 +118,10 @@ def write_changes(module, path, b_lines, reload=True):
                              rc=rc, stdout=stdout, stderr=stderr)
 
 
-def present(module, path, line, comment, regexp, reload=True):
-
-    with open(path, 'rb') as f:
-        b_lines_orig = f.readlines()
-
-    diff = dict(before='', after='')
-    if module._diff:
-        diff['before'] = to_native(b''.join(b_lines))
-
-    b_line = to_bytes(line, errors='surrogate_or_strict')
-    b_comment = None
-    if comment is not None:
-       b_comment = to_bytes(comment, errors='surrogate_or_strict').rstrip(b'\r\n')
-    b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
-    b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
-    b_lines = []
-    n_removed = 0
-    found = False
-    changed = False
-    msg = ''
-
-    for lineno, b_cur_line in enumerate(b_lines_orig):
-        match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
-        if match:
-            if found:
-                # remove duplicates
-                n_removed += 1
-            else:
-                found = True
-                if b_comment is None or b_comment == match.group(2):
-                    b_lines.append(b_cur_line)
-                else:
-                    b_lines.append(b'%s # %s%s' % (b_line, b_comment, b_linesep))
-                    changed = True
-                    msg = 'comment updated'
-        else:
-            b_lines.append(b_cur_line)
-
-    if not found:
-        # Add it to the end of the file
-        # If the file is not empty then ensure there's a newline before the added line
-        if b_lines and not b_lines[-1][-1:] in (b'\n', b'\r'):
-            b_lines.append(b_linesep)
-        b_lines.append(b_line + b_linesep)
-        msg = 'line added'
-        if n_removed > 0:
-            msg += ' (%d duplicate(s) removed)' % n_removed
-        changed = True
-    elif n_removed > 0:
-        if changed:
-            msg += ' (%d duplicate(s) removed)' % n_removed
-        else:
-            msg = '%d duplicate(s) removed' % n_removed
-            changed = True
-
-    if module._diff:
-        diff['after'] = to_native(b''.join(b_lines))
-
-    if changed and not module.check_mode:
-        write_changes(module, path, b_lines, reload)
-
-    if module.check_mode and not os.path.exists(path):
-        module.exit_json(changed=changed, msg=msg, diff=diff)
-
-    module.exit_json(changed=changed, msg=msg, diff=diff)
-
-
-def absent(module, path, regexp, reload=True):
-
-    with open(path, 'rb') as f:
-        b_lines = f.readlines()
-
-    diff = dict(before='', after='')
-    if module._diff:
-        diff['before'] = to_native(b''.join(b_lines))
-
-    b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
-    orig_len = len(b_lines)
-
-    b_lines = [l for l in b_lines if not b_regex.match(l.rstrip(b'\r\n'))]
-
-    found = orig_len - len(b_lines)
-    changed = found > 0
-    msg = "%s line(s) removed" % found if changed else ''
-
-    if changed and not module.check_mode:
-        write_changes(module, path, b_lines, reload)
-
-    if module._diff:
-        diff['after'] = to_native(b''.join(b_lines))
-    module.exit_json(changed=changed, found=found, msg=msg, diff=diff)
-
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            host=dict(type='str', required=True),
+            host=dict(type='list', required=True),
             proto=dict(type='str', default='any', choices=['ipv4', 'ipv6', 'any']),
             prefixlen=dict(type='int'),
             comment=dict(type='str'),
@@ -223,28 +133,11 @@ def main():
         supports_check_mode=True,
     )
 
-    host = module.params['host']
-    proto = module.params['proto']
-    prefixlen = module.params['prefixlen']
-
-    split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
-    if split:
-        host, proto = split.group(1), split.group(2)
-    split = re.match(r'^(.+)/(\d+)$', host)
-    if split:
-        host, prefixlen = split.group(1), int(split.group(2))
-
-    if not re.match(r'^((\d+\.){3}\d+|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$', host):
-        module.fail_json(rc=256, msg='Invalid host argument')
-
-    line = host
-    if prefixlen is not None:
-        line = '%s/%d' % (line, prefixlen)
-    if proto != 'any':
-        line = '%s/%s' % (line, proto)
-
-    regexp = r'^\s*(%s)\s*(?:#+\s*(.*)\s*)?$' % line
     comment = module.params['comment']
+    b_comment = None
+    if comment is not None:
+        b_comment = to_bytes(comment, errors='surrogate_or_strict')
+        b_comment = b_comment.rstrip(b'\r\n')
 
     domain = module.params['domain']
     domain_to_extension = {
@@ -253,13 +146,124 @@ def main():
     }
     if domain not in domain_to_extension:
         module.fail_json(rc=256, msg='Invalid domain argument')
-    path = ferm_config(module, 'hosts.%s' % domain_to_extension[domain])
 
-    reload = module.params['reload']
-    if module.params['state'] == 'present':
-        present(module, path, line, comment, regexp, reload)
+    config_path = ferm_config(module, 'hosts.%s' % domain_to_extension[domain])
+    with open(config_path, 'rb') as f:
+        b_lines = f.readlines()
+        orig_len = len(b_lines)
+
+    diff = dict(before='', after='')
+    if module._diff:
+        diff['before'] = to_native(b''.join(b_lines))
+
+    comment = module.params['comment']
+    b_comment = None
+    if comment is not None:
+        b_comment = to_bytes(comment, errors='surrogate_or_strict')
+        b_comment = b_comment.rstrip(b'\r\n')
+
+    b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
+
+    add = module.params['state'] == 'present'
+
+    changed = False
+    added = 0
+    removed = 0
+    updated = 0
+    res = {}
+    msg = ''
+    valid_host = r'^((\d+\.){3}\d+|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$'
+
+    for host in module.params['host']:
+        host = str(host)
+        proto = module.params['proto']
+        prefixlen = module.params['prefixlen']
+
+        split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
+        if split:
+            host, proto = split.group(1), split.group(2)
+        split = re.match(r'^(.+)/(\d+)$', host)
+        if split:
+            host, prefixlen = split.group(1), int(split.group(2))
+
+        if not re.match(valid_host, host):
+            module.fail_json(rc=256, msg="Invalid host '%s'" % host)
+
+        line = host
+        if prefixlen is not None:
+            line = '%s/%d' % (line, prefixlen)
+        if proto != 'any':
+            line = '%s/%s' % (line, proto)
+
+        b_line = to_bytes(line, errors='surrogate_or_strict')
+
+        b_new_line = b_line
+        if b_comment:
+            b_new_line += b' # ' + b_comment
+
+        regexp = r'^\s*(%s)\s*(?:#+\s*(.*)\s*)?$' % line
+        b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
+
+        if add:
+            b_prev_lines = b_lines
+            b_lines = []
+            found = False
+
+            for lineno, b_cur_line in enumerate(b_prev_lines):
+                match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
+                if match and found:
+                    # remove duplicates
+                    removed += 1
+                    changed = True
+                elif match and not found:
+                    found = True
+                    if b_comment is None or b_comment == match.group(2):
+                        b_lines.append(b_cur_line)
+                    else:
+                        b_lines.append(b_new_line + b_linesep)
+                        updated += 1
+                        changed = True
+                else:
+                    b_lines.append(b_cur_line)
+
+            if not found:
+                # add to the end of file ensuring there's a newline before it
+                if b_lines and not b_lines[-1][-1:] in (b'\n', b'\r'):
+                    b_lines.append(b_linesep)
+                b_lines.append(b_new_line + b_linesep)
+                added += 1
+                changed = True
+        else:
+            b_lines = [l for l in b_lines
+                       if not b_regex.match(l.rstrip(b'\r\n'))]
+
+    if add:
+        res['hosts_added'] = added
+        res['comments_updated'] = updated
+        res['duplicates_removed'] = removed
+
+        msg_list = []
+        if added > 0:
+            msg_list.append('%d host(s) added' % added)
+        if updated > 0:
+            msg_list.append('%s comment(s) updated' % updated)
+        if removed > 0:
+            msg_list.append('%s duplicate(s) removed' % removed)
+        msg = ', '.join(msg_list)
     else:
-        absent(module, path, regexp, reload)
+        removed = orig_len - len(b_lines)
+        if removed > 0:
+            changed = True
+            res['hosts_removed'] = removed
+            msg = "%s host(s) removed" % removed
+
+    if changed and not module.check_mode:
+        write_changes(module, config_path, b_lines)
+
+    if module._diff:
+        diff['after'] = to_native(b''.join(b_lines))
+
+    module.exit_json(changed=changed, msg=msg, diff=diff, **res)
 
 
 if __name__ == '__main__':
