@@ -23,22 +23,24 @@ options:
       - Rule name.
     type: str
     required: true
-  weight:
+  rule:
+    description:
+      - Text of firewall rules.
+      - Required if I(state) is C(present).
+    type: str
+    aliases: [ rules, snippet ]
+  hook:
+    description:
+      - Hook to insert the rule in.
+    type: str
+    choices: [ custom, input, forward, internal, external ]
+    default: input
+  prio:
     description:
       - Relative rule order from 0 to 99.
     type: int
-    default: 55
-  hook:
-    description:
-      - Filter to hook to insert the rule.
-    type: str
-    choices: [ input, forward, before, after ]
-    default: input
-  rules:
-    description:
-      - Text of firewall rules, required if C(state) is C(present).
-    type: str
-    aliases: [ rule, snippet ]
+    default: 50
+    aliases: [ priority ]
   state:
     description:
       - Whether the rule should be added or removed.
@@ -81,35 +83,40 @@ import tempfile
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes
 
+DEFAULT_PRIO = 50
+
 
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True),
-            weight=dict(type='int', default=55),
-            rules=dict(type='str', aliases=['rule', 'snippet']),
-            hook=dict(type='str', default='input',
-                      choices=['input', 'forward', 'before', 'after']),
+            rule=dict(type='str', no_log=True, aliases=['rules', 'snippet']),
+            hook=dict(type='str', default='custom',
+                      choices=['custom', 'input', 'forward', 'internal', 'external']),
+            prio=dict(type='int', default=DEFAULT_PRIO, aliases=['priority']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             backup=dict(type='bool', default=False),
             reload=dict(type='bool', default=True),
             ferm_dir=dict(type='str', default='/etc/ferm'),
         ),
         supports_check_mode=True,
+        required_if=[('state', 'present', ['rule'])],
     )
 
     name = module.params['name']
-    weight = module.params['weight']
-    if re.match(r'[\s\/]', name):
-        module.fail_json(msg="Invalid name: '%s'" % name)
-    if weight < 0 or weight > 99:
-        module.fail_json(msg='Invalid weight: %d' % weight)
+    if re.search(r'^\d+-|[\s\\\/]|\.ferm$', name):
+        module.fail_json(msg="Invalid rule name: '%s'" % name)
 
-    hook_dir = os.path.join(module.params['ferm_dir'], module.params['hook'])
+    prio = module.params['prio']
+    if prio < 0 or prio > 99:
+        module.fail_json(msg='Invalid rule prio: %d' % weight)
+
+    hook = module.params['hook']
+    hook_dir = os.path.join(module.params['ferm_dir'], hook)
     if not os.path.isdir(hook_dir) or not os.access(hook_dir, os.W_OK):
         module.fail_json(msg='Directory is absent or not writable: ' + hook_dir)
 
-    path = os.path.join(hook_dir, '%02d-%s.ferm' % (weight, name))
+    path = os.path.join(hook_dir, '%02d-%s.ferm' % (prio, name))
     b_path = to_bytes(path, errors='surrogate_or_strict')
 
     exists = os.path.exists(b_path)
@@ -130,31 +137,31 @@ def main():
             if backup:
                 backup_file = module.backup_local(path)
             os.remove(b_path)
-            msg = 'Rule removed'
+            msg = 'Rule removed: %s' % name
 
     if state == 'present':
-        rules = module.params['rules']
-        if rules is None:
-            module.fail_json(msg='Please provide rules')
-        b_rules = to_bytes(rules)
+        rule = module.params['rule']
+        if rule is None:
+            module.fail_json(msg='Please provide the rule')
+        b_rule = to_bytes(rule)
 
         if exists:
             with open(path, 'rb') as f:
-                b_orig_rules = f.read()
-            changed = b_rules != b_orig_rules
+                b_orig_rule = f.read()
+            changed = b_rule != b_orig_rule
         else:
             changed = True
 
         if changed and not module.check_mode:
             tmpfd, tmpfile = tempfile.mkstemp()
             with os.fdopen(tmpfd, 'wb') as f:
-                f.write(b_rules)
+                f.write(b_rule)
 
             if exists and backup:
                 backup_file = module.backup_local(path)
 
             module.atomic_move(tmpfile, path, unsafe_writes=False)
-            msg = 'Rule saved'
+            msg = 'Rule saved: %s' % name
 
             module.set_mode_if_different(path, '0640', changed)
             module.set_owner_if_different(path, 'root', changed)
