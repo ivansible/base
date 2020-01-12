@@ -78,6 +78,7 @@ EXAMPLES = r'''
 
 import os
 import re
+import glob
 import tempfile
 
 from ansible.module_utils.basic import AnsibleModule
@@ -109,21 +110,33 @@ def main():
 
     prio = module.params['prio']
     if prio < 0 or prio > 99:
-        module.fail_json(msg='Invalid rule prio: %d' % weight)
+        module.fail_json(msg='Invalid rule prio: %d' % prio)
 
     hook = module.params['hook']
     hook_dir = os.path.join(module.params['ferm_dir'], hook)
     if not os.path.isdir(hook_dir) or not os.access(hook_dir, os.W_OK):
         module.fail_json(msg='Directory is absent or not writable: ' + hook_dir)
 
-    path = os.path.join(hook_dir, '%02d-%s.ferm' % (prio, name))
-    b_path = to_bytes(path, errors='surrogate_or_strict')
+    new_path = os.path.join(hook_dir, '%02d-%s.ferm' % (prio, name))
+    b_new_path = to_bytes(new_path, errors='surrogate_or_strict')
 
-    exists = os.path.exists(b_path)
-    if exists and not os.path.isfile(b_path):
-        module.fail_json(msg='Destination is not a regular file: ' + path)
-    if exists and not os.access(b_path, os.W_OK):
-        module.fail_json(msg='Destination is not writable: ' + path)
+    path_glob = os.path.join(hook_dir, '*-%s.ferm' % name)
+    regexp = os.path.join(re.escape(hook_dir), '[0-9]{2}-%s.ferm' % re.escape(name))
+    path_regex = re.compile('^%s$' % regexp)
+    old_list = sorted(p for p in glob.glob(path_glob) if path_regex.match(p))
+
+    exists = os.path.exists(b_new_path)
+    if exists and not os.path.isfile(b_new_path):
+        module.fail_json(msg='Destination is not a regular file: ' + new_path)
+    if exists and not os.access(b_new_path, os.W_OK):
+        module.fail_json(msg='Destination is not writable: ' + new_path)
+
+    if exists:
+        old_list.remove(new_path)  # must be present in the list
+        old_path = new_path
+    elif old_list:
+        old_path = old_list.pop(0)  # first in sort order
+        exists = True
 
     changed = False
     msg = ''
@@ -135,9 +148,11 @@ def main():
         changed = True
         if not module.check_mode:
             if backup:
-                backup_file = module.backup_local(path)
-            os.remove(b_path)
+                backup_file = module.backup_local(old_path)
+            os.remove(to_bytes(old_path, errors='surrogate_or_strict'))
             msg = 'Rule removed: %s' % name
+            if old_path != new_path:
+                msg += ' (as old priority)'
 
     if state == 'present':
         rule = module.params['rule']
@@ -146,9 +161,9 @@ def main():
         b_rule = to_bytes(rule)
 
         if exists:
-            with open(path, 'rb') as f:
+            with open(old_path, 'rb') as f:
                 b_orig_rule = f.read()
-            changed = b_rule != b_orig_rule
+            changed = b_rule != b_orig_rule or old_path != new_path
         else:
             changed = True
 
@@ -158,14 +173,34 @@ def main():
                 f.write(b_rule)
 
             if exists and backup:
-                backup_file = module.backup_local(path)
+                backup_file = module.backup_local(old_path)
+            if exists and old_path != new_path:
+                os.remove(to_bytes(old_path, errors='surrogate_or_strict'))
 
-            module.atomic_move(tmpfile, path, unsafe_writes=False)
+            module.atomic_move(tmpfile, new_path, unsafe_writes=False)
             msg = 'Rule saved: %s' % name
+            if exists and old_path != new_path:
+                msg += ' (as new priority)'
 
-            module.set_mode_if_different(path, '0640', changed)
-            module.set_owner_if_different(path, 'root', changed)
-            module.set_group_if_different(path, 'root', changed)
+            module.set_mode_if_different(new_path, '0640', changed)
+            module.set_owner_if_different(new_path, 'root', changed)
+            module.set_group_if_different(new_path, 'root', changed)
+
+    result = {'path': new_path}
+    if backup_file:
+        result['backup'] = backup_file
+    if exists and old_path != new_path:
+        result['old_path'] = old_path
+
+    if old_list:
+        if not module.check_mode:
+            for path in old_list:
+                os.remove(to_bytes(path, errors='surrogate_or_strict'))
+        result['num_duplicates'] = len(old_list)
+        if not msg:
+            msg = 'Rule unchanged'
+        msg += ', %d duplicate(s) removed' % len(old_list)
+        changed = True
 
     if changed and module.params['reload'] and not module.check_mode:
         cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
@@ -174,10 +209,7 @@ def main():
             module.fail_json(msg='Failed to reload ferm',
                              rc=rc, stdout=stdout, stderr=stderr)
 
-    result = dict(changed=changed, msg=msg, path=path)
-    if backup_file:
-        result['backup_file'] = backup_file
-    module.exit_json(**result)
+    module.exit_json(changed=changed, msg=msg, **result)
 
 
 if __name__ == '__main__':
