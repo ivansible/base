@@ -22,8 +22,10 @@ options:
   port:
     description:
       - List of port descriptors, where each descriptor is a port number
-        or dash-separated port range, optionally followed by slash
-        and C(proto) (overrides the C(proto) parameter).
+        or C(-)-separated port range, optionally followed by C(/)
+        and I(proto) (overrides the C(proto) parameter).
+      - Descriptors can override C(comment) by adding C(;) and custom comment.
+      - Descriptors prepended by C(-) will be removed (overrides C(state)).
     type: list
     required: true
   proto:
@@ -135,33 +137,38 @@ def main():
     config_path = ferm_config(module, 'ports.%s' % domain_to_extension[domain])
     with open(config_path, 'rb') as f:
         b_lines = f.readlines()
-        orig_len = len(b_lines)
 
     diff = dict(before='', after='')
     if module._diff:
         diff['before'] = to_native(b''.join(b_lines))
 
-    comment = module.params['comment']
-    b_comment = None
-    if comment is not None:
-        b_comment = to_bytes(comment, errors='surrogate_or_strict')
-        b_comment = b_comment.rstrip(b'\r\n')
-
     b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
-
-    add = module.params['state'] == 'present'
 
     changed = False
     added = 0
     removed = 0
     updated = 0
+    deduped = 0
     res = {}
     msg = ''
     valid_port = r'^[0-9]+(-[0-9]+)?$'
 
     for port in module.params['port']:
-        port = str(port)
+        port = str(port).strip() if port else ''
         proto = module.params['proto']
+        comment = module.params['comment'] or ''
+        add = module.params['state'] == 'present'
+
+        if port.startswith('-'):
+            port = port[1:].strip()
+            add = False
+        if not port:
+            continue
+
+        split = re.match(r'^([^;]*);(.*)$', port)
+        if split:
+            port, comment = split.group(1).strip(), split.group(2).strip()
+        b_comment = to_bytes(comment.rstrip('\r\n'), errors='surrogate_or_strict')
 
         split = re.match(r'^([^/]+)/(tcp|udp|any)$', port)
         if split:
@@ -189,11 +196,11 @@ def main():
                 match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
                 if match and found:
                     # remove duplicates
-                    removed += 1
+                    deduped += 1
                     changed = True
                 elif match and not found:
                     found = True
-                    if b_comment is None or b_comment == match.group(2):
+                    if not b_comment or b_comment == match.group(2):
                         b_lines.append(b_cur_line)
                     else:
                         b_lines.append(b_new_line + b_linesep)
@@ -210,28 +217,26 @@ def main():
                 added += 1
                 changed = True
         else:
+            orig_len = len(b_lines)
             b_lines = [l for l in b_lines
                        if not b_regex.match(l.rstrip(b'\r\n'))]
+            removed += orig_len - len(b_lines)
 
-    if add:
-        res['ports_added'] = added
-        res['comments_updated'] = updated
-        res['duplicates_removed'] = removed
-
-        msg_list = []
-        if added > 0:
-            msg_list.append('%d port(s) added' % added)
-        if updated > 0:
-            msg_list.append('%s comment(s) updated' % updated)
-        if removed > 0:
-            msg_list.append('%s duplicate(s) removed' % removed)
-        msg = ', '.join(msg_list)
-    else:
-        removed = orig_len - len(b_lines)
-        if removed > 0:
-            changed = True
-            res['ports_removed'] = removed
-            msg = "%s port(s) removed" % removed
+    msg_list = []
+    if added > 0:
+        res['added'] = added
+        msg_list.append('%d port(s) added' % added)
+    if removed > 0:
+        changed = True
+        res['removed'] = removed
+        msg_list.append('%d port(s) removed' % removed)
+    if updated > 0:
+        res['updated'] = updated
+        msg_list.append('%d comment(s) updated' % updated)
+    if deduped > 0:
+        res['deduped'] = deduped
+        msg_list.append('%d duplicate(s) removed' % deduped)
+    msg = ', '.join(msg_list)
 
     if changed and not module.check_mode:
         write_changes(module, config_path, b_lines)
