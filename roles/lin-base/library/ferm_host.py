@@ -160,7 +160,7 @@ def main():
     deduped = 0
     res = {}
     msg = ''
-    valid_host = r'^(([0-9]+\.){3}[0-9]+|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$'
+    valid_host = r'^(([0-9]{1,3}[.]){3}[0-9]{1,3}|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$'
 
     for host in module.params['host']:
         host = str(host).strip() if host else ''
@@ -183,12 +183,14 @@ def main():
         split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
         if split:
             host, proto = split.group(1), split.group(2)
-        split = re.match(r'^(.+)/(\d+)$', host)
+        split = re.match(r'^(.+)/([0-9]+)$', host)
         if split:
             host, prefixlen = split.group(1), int(split.group(2))
 
         if not re.match(valid_host, host):
             module.fail_json(rc=256, msg="Invalid host '%s'" % host)
+        if prefixlen is not None and (prefixlen < 0 or prefixlen > 128):
+            module.fail_json(rc=256, msg="Invalid prefixlen %d" % prefixlen)
 
         line = host
         if prefixlen is not None:

@@ -151,7 +151,7 @@ def main():
     deduped = 0
     res = {}
     msg = ''
-    valid_port = r'^[0-9]+(-[0-9]+)?$'
+    valid_port = r'^[0-9]{1,5}([-][0-9]{1,5})?$'
 
     for port in module.params['port']:
         port = str(port).strip() if port else ''
