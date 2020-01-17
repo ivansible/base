@@ -22,8 +22,8 @@ options:
   port:
     description:
       - List of port descriptors, where each descriptor is a port number
-        or C(-)-separated port range, optionally followed by C(/)
-        and I(proto) (overrides the C(proto) parameter).
+        or C(:)-separated port range, optionally followed
+        by C(/) and I(proto) (overrides the C(proto) parameter).
       - Descriptors can override C(comment) by adding C(;) and custom comment.
       - Descriptors prepended by C(-) will be removed (overrides C(state)).
     type: list
@@ -151,7 +151,7 @@ def main():
     deduped = 0
     res = {}
     msg = ''
-    valid_port = r'^[0-9]{1,5}([-][0-9]{1,5})?$'
+    valid_port = r'^[0-9]{1,5}([:-][0-9]{1,5})?$'
 
     for port in module.params['port']:
         port = str(port).strip() if port else ''
@@ -177,6 +177,7 @@ def main():
         if not re.match(valid_port, port):
             module.fail_json(rc=256, msg="Invalid port '%s'" % port)
 
+        port = port.replace('-', ':')
         line = port if proto == 'any' else '%s/%s' % (port, proto)
         b_line = to_bytes(line, errors='surrogate_or_strict')
 
