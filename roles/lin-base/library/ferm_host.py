@@ -60,9 +60,17 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+  exclusive:
+    description:
+      - If this is I(true) and C(state) is I(present),
+        then adding item to a domain will remove it from other domains.
+      - This has no effect if item C(state) is I(absent).
+    type: bool
+    default: false
   reload:
     description:
       - Reload firewall rules in case of changes.
+    type: bool
     default: true
   ferm_dir:
     description:
@@ -91,9 +99,13 @@ import tempfile
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes, to_native
 
+domain_to_extension = {
+    'internal': 'int',
+    'blocked': 'block',
+}
+
 
 def ferm_config(module, filename):
-
     ferm_dir = module.params['ferm_dir']
     dest = os.path.join(ferm_dir, filename)
     b_dest = to_bytes(dest, errors='surrogate_or_strict')
@@ -105,62 +117,31 @@ def ferm_config(module, filename):
 
 
 def write_changes(module, config_path, b_lines):
-
     tmpfd, tmpfile = tempfile.mkstemp()
     with os.fdopen(tmpfd, 'wb') as f:
         f.writelines(b_lines)
-
     module.atomic_move(tmpfile, config_path, unsafe_writes=False)
 
-    if module.params['reload']:
-        cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
-        rc, stdout, stderr = module.run_command(cmd)
-        if rc:
-            module.fail_json(msg='Failed to reload ferm',
-                             rc=rc, stdout=stdout, stderr=stderr)
+
+def reload_ferm(module):
+    cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
+    rc, stdout, stderr = module.run_command(cmd)
+    if rc:
+        module.fail_json(msg='Failed to reload ferm',
+                         rc=rc, stdout=stdout, stderr=stderr)
 
 
-def main():
-    module = AnsibleModule(
-        argument_spec=dict(
-            host=dict(type='list', required=True),
-            proto=dict(type='str', default='any', choices=['ipv4', 'ipv6', 'any']),
-            prefixlen=dict(type='int'),
-            comment=dict(type='str'),
-            domain=dict(type='str', default='internal', choices=['internal', 'blocked']),
-            state=dict(type='str', default='present', choices=['present', 'absent']),
-            reload=dict(type='bool', default=True),
-            ferm_dir=dict(type='str', default='/etc/ferm'),
-        ),
-        supports_check_mode=True,
-    )
-
-    domain = module.params['domain']
-    domain_to_extension = {
-        'internal': 'int',
-        'blocked': 'block',
-    }
-    if domain not in domain_to_extension:
-        module.fail_json(rc=256, msg='Invalid domain argument')
-
+def handle_hosts(module, domain, exclude, counts, diff):
     config_path = ferm_config(module, 'hosts.%s' % domain_to_extension[domain])
     with open(config_path, 'rb') as f:
         b_lines = f.readlines()
 
-    diff = dict(before='', after='')
-    if module._diff:
+    if module._diff and not exclude:
         diff['before'] = to_native(b''.join(b_lines))
 
     b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
-
-    changed = False
-    added = 0
-    removed = 0
-    updated = 0
-    deduped = 0
-    res = {}
-    msg = ''
     valid_host = r'^(([0-9]{1,3}[.]){3}[0-9]{1,3}|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$'
+    changed = False
 
     for host in module.params['host']:
         host = str(host).strip() if host else ''
@@ -174,6 +155,12 @@ def main():
             add = False
         if not host:
             continue
+
+        if exclude:
+            if add:
+                add = False
+            else:
+                continue
 
         split = re.match(r'^([^;]*);(.*)$', host)
         if split:
@@ -212,11 +199,11 @@ def main():
             b_lines = []
             found = False
 
-            for lineno, b_cur_line in enumerate(b_prev_lines):
+            for b_cur_line in b_prev_lines:
                 match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
                 if match and found:
                     # remove duplicates
-                    deduped += 1
+                    counts['deduped'] += 1
                     changed = True
                 elif match and not found:
                     found = True
@@ -224,7 +211,7 @@ def main():
                         b_lines.append(b_cur_line)
                     else:
                         b_lines.append(b_new_line + b_linesep)
-                        updated += 1
+                        counts['updated'] += 1
                         changed = True
                 else:
                     b_lines.append(b_cur_line)
@@ -234,37 +221,81 @@ def main():
                 if b_lines and not b_lines[-1][-1:] in (b'\n', b'\r'):
                     b_lines.append(b_linesep)
                 b_lines.append(b_new_line + b_linesep)
-                added += 1
+                counts['added'] += 1
                 changed = True
         else:
             orig_len = len(b_lines)
             b_lines = [l for l in b_lines
                        if not b_regex.match(l.rstrip(b'\r\n'))]
-            removed += orig_len - len(b_lines)
-
-    msg_list = []
-    if added > 0:
-        res['added'] = added
-        msg_list.append('%d host(s) added' % added)
-    if removed > 0:
-        changed = True
-        res['removed'] = removed
-        msg_list.append('%d host(s) removed' % removed)
-    if updated > 0:
-        res['updated'] = updated
-        msg_list.append('%d comment(s) updated' % updated)
-    if deduped > 0:
-        res['deduped'] = deduped
-        msg_list.append('%d duplicate(s) removed' % deduped)
-    msg = ', '.join(msg_list)
+            removed = orig_len - len(b_lines)
+            counts['removed'] += removed
+            if removed > 0:
+                changed = True
 
     if changed and not module.check_mode:
         write_changes(module, config_path, b_lines)
 
-    if module._diff:
+    if module._diff and not exclude:
         diff['after'] = to_native(b''.join(b_lines))
 
-    module.exit_json(changed=changed, msg=msg, diff=diff, **res)
+    return changed
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            host=dict(type='list', required=True),
+            proto=dict(type='str', default='any', choices=['ipv4', 'ipv6', 'any'],
+                       aliases=['protocol']),
+            prefixlen=dict(type='int'),
+            comment=dict(type='str'),
+            domain=dict(type='str', default='internal',
+                        choices=['internal', 'blocked']),
+            state=dict(type='str', default='present', choices=['present', 'absent']),
+            exclusive=dict(type='bool', default=False),
+            reload=dict(type='bool', default=True),
+            ferm_dir=dict(type='str', default='/etc/ferm'),
+        ),
+        supports_check_mode=True,
+    )
+
+    domain = module.params['domain']
+    if domain not in domain_to_extension:
+        module.fail_json(rc=256, msg='Invalid domain argument')
+
+    counts = dict(added=0, removed=0, updated=0, deduped=0)
+    diff = dict(before='', after='')
+
+    changed = handle_hosts(module, domain, False, counts, diff)
+
+    if module.params['exclusive']:
+        # remove item from other domains
+        for other_domain in domain_to_extension.keys():
+            if other_domain == domain:
+                continue
+            excluded = handle_hosts(module, other_domain, True, counts, diff)
+            changed = changed or excluded
+
+    if changed and module.params['reload'] and not module.check_mode:
+        reload_ferm(module)
+
+    msg_list = []
+    result = {}
+    if counts['added'] > 0:
+        result['added'] = counts['added']
+        msg_list.append('%d host(s) added' % counts['added'])
+    if counts['removed'] > 0:
+        result['removed'] = counts['removed']
+        msg_list.append('%d host(s) removed' % counts['removed'])
+    if counts['updated'] > 0:
+        result['updated'] = counts['updated']
+        msg_list.append('%d comment(s) updated' % counts['updated'])
+    if counts['deduped'] > 0:
+        result['deduped'] = counts['deduped']
+        msg_list.append('%d duplicate(s) removed' % counts['deduped'])
+    msg = ', '.join(msg_list)
+
+    module.exit_json(changed=changed, msg=msg, diff=diff, **result)
 
 
 if __name__ == '__main__':
