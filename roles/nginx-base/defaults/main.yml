@@ -26,8 +26,9 @@ nginx_ssl_key:
       if nginx_letsencrypt_cert == '' else
       '/etc/letsencrypt/live/%s/privkey.pem' % nginx_letsencrypt_cert }}"
 
-nginx_conf_dir: /etc/nginx/conf.d
-nginx_site_dir: /etc/nginx/sites-enabled
+nginx_root_dir: /etc/nginx
+nginx_conf_dir: "{{ nginx_root_dir }}/conf.d"
+nginx_site_dir: "{{ nginx_root_dir }}/sites-enabled"
 
 nginx_def_site_dir: /var/www/dummy
 
