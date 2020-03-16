@@ -60,7 +60,7 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
-  exclusive:
+  solo:
     description:
       - If this is I(true) and C(state) is I(present),
         then adding item to a domain will remove it from other domains.
@@ -252,7 +252,7 @@ def main():
             domain=dict(type='str', default='internal',
                         choices=['internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
-            exclusive=dict(type='bool', default=False),
+            solo=dict(type='bool', default=False),
             reload=dict(type='bool', default=True),
             ferm_dir=dict(type='str', default='/etc/ferm'),
         ),
@@ -268,7 +268,7 @@ def main():
 
     changed = handle_hosts(module, domain, False, counts, diff)
 
-    if module.params['exclusive']:
+    if module.params['solo']:
         # remove item from other domains
         for other_domain in domain_to_extension.keys():
             if other_domain == domain:
