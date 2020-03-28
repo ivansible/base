@@ -11,7 +11,7 @@ lin_use_ssh: true
 lin_ssh_port: 22
 lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 
-lin_use_syslog: true
+lin_use_rsyslog: true
 lin_systemd_tmpfiles: true
 
 lin_use_docker: "{{ ansible_kernel is version('3.10', '>')
