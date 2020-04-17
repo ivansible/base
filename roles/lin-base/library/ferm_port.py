@@ -115,7 +115,10 @@ def write_changes(module, config_path, b_lines):
 
 
 def reload_ferm(module):
-    cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
+    if os.path.isdir('/proc/vz'):
+        cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
+    else:
+        cmd = ['ferm-ipset']
     rc, stdout, stderr = module.run_command(cmd)
     if rc:
         module.fail_json(msg='Failed to reload ferm',
