@@ -125,6 +125,7 @@ def main():
         content=dict(),
         method=dict(choices=['post', 'put', 'patch', 'delete'], default='post'),
         format=dict(choices=['json', 'xml'], default='json'),
+        keenetic=dict(type='bool', default=True),
     )
     required_if = [
         ['method', 'post', ['content']],
@@ -169,8 +170,9 @@ def main():
             else:
                 warnings.append("delete not executed as resource '%s' does not exist" % path)
         else:
-            if running:
-                if method == 'post' and False:  # allow to use POST on existing Keenetic resources
+            # Keenetic accepts action lists and defaults to POST, even on existing resources
+            if running and not module.params['keenetic']:
+                if method == 'post':
                     module.fail_json(msg="resource '%s' already exist" % path, code=409)
                 diff = dict_diff(running, candidate)
                 result['candidate'] = candidate
