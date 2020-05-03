@@ -35,7 +35,7 @@ options:
     choices: [ tcp, udp, any ]
     default: any
     aliases: [ protocol ]
-  domain:
+  zone:
     description:
       - C(external) opens the port for all hosts;
       - C(internal) opens the port for internal hosts only;
@@ -43,19 +43,21 @@ options:
     type: str
     choices: [ external, internal, blocked ]
     default: external
+    aliases: [ domain ]
   state:
     description:
       - Whether the rule should be added or removed.
     type: str
     choices: [ absent, present ]
     default: present
-  solo:
+  solo_zone:
     description:
       - If this is I(true) and C(state) is I(present),
-        then adding item to a domain will remove it from other domains.
+        then adding item to a zone will remove it from other zones.
       - This has no effect if item C(state) is I(absent).
     type: bool
     default: false
+    aliases: [ solo ]
   reload:
     description:
       - Reload firewall rules in case of changes.
@@ -79,7 +81,7 @@ EXAMPLES = r'''
   ferm_port:
     port: 22
     proto: tcp
-    domain: internal
+    zone: internal
 '''
 
 import os
@@ -89,7 +91,7 @@ import tempfile
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes, to_native
 
-domain_to_extension = {
+zone_to_extension = {
     'external': 'ext',
     'internal': 'int',
     'blocked': 'block',
@@ -125,8 +127,8 @@ def reload_ferm(module):
                          rc=rc, stdout=stdout, stderr=stderr)
 
 
-def handle_ports(module, domain, exclude, counts, diff):
-    config_path = ferm_config(module, 'ports.%s' % domain_to_extension[domain])
+def handle_ports(module, zone, exclude, counts, diff):
+    config_path = ferm_config(module, 'ports.%s' % zone_to_extension[zone])
     with open(config_path, 'rb') as f:
         b_lines = f.readlines()
 
@@ -232,31 +234,31 @@ def main():
             proto=dict(type='str', default='any', choices=['tcp', 'udp', 'any'],
                        aliases=['protocol']),
             comment=dict(type='str'),
-            domain=dict(type='str', default='external',
-                        choices=['external', 'internal', 'blocked']),
+            zone=dict(type='str', default='external', aliases=['domain'],
+                      choices=['external', 'internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
-            solo=dict(type='bool', default=False),
+            solo_zone=dict(type='bool', default=False, aliases=['solo']),
             reload=dict(type='bool', default=True),
             ferm_dir=dict(type='str', default='/etc/ferm'),
         ),
         supports_check_mode=True,
     )
 
-    domain = module.params['domain']
-    if domain not in domain_to_extension:
-        module.fail_json(rc=256, msg='Invalid domain argument')
+    zone = module.params['zone']
+    if zone not in zone_to_extension:
+        module.fail_json(rc=256, msg='Invalid zone argument')
 
     counts = dict(added=0, removed=0, updated=0, deduped=0)
     diff = dict(before='', after='')
 
-    changed = handle_ports(module, domain, False, counts, diff)
+    changed = handle_ports(module, zone, False, counts, diff)
 
-    if module.params['solo']:
-        # remove item from other domains
-        for other_domain in domain_to_extension.keys():
-            if other_domain == domain:
+    if module.params['solo_zone']:
+        # remove item from other zones
+        for other_zone in zone_to_extension.keys():
+            if other_zone == zone:
                 continue
-            excluded = handle_ports(module, other_domain, True, counts, diff)
+            excluded = handle_ports(module, other_zone, True, counts, diff)
             changed = changed or excluded
 
     if changed and module.params['reload'] and not module.check_mode:

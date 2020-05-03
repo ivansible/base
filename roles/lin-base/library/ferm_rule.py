@@ -70,10 +70,13 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Block the host
-  ferm_host:
-    host: badguy.com
-    domain: blocked
+- name: Block port 9999
+  ferm_rule:
+    name: block-sample-port
+    rule: |
+      proto tcp dport 9999 DROP;
+    hook: input
+    prio: 55
 '''
 
 import os

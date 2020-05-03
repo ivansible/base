@@ -47,26 +47,28 @@ options:
     description:
       - Host comment (optional).
     type: str
-  domain:
+  zone:
     description:
       - C(internal) add host to the internal list;
       - C(blocked) blocks the host.
     type: str
     choices: [ internal, blocked ]
     default: external
+    aliases: [ domain ]
   state:
     description:
       - Whether the rule should be added or removed.
     type: str
     choices: [ absent, present ]
     default: present
-  solo:
+  solo_zone:
     description:
       - If this is I(true) and C(state) is I(present),
-        then adding item to a domain will remove it from other domains.
+        then adding item to a zone will remove it from other zones.
       - This has no effect if item C(state) is I(absent).
     type: bool
     default: false
+    aliases: [ solo ]
   reload:
     description:
       - Reload firewall rules in case of changes.
@@ -89,7 +91,7 @@ EXAMPLES = r'''
 - name: Block the host
   ferm_host:
     host: badguy.com
-    domain: blocked
+    zone: blocked
 '''
 
 import os
@@ -99,7 +101,7 @@ import tempfile
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes, to_native
 
-domain_to_extension = {
+zone_to_extension = {
     'internal': 'int',
     'blocked': 'block',
 }
@@ -134,8 +136,8 @@ def reload_ferm(module):
                          rc=rc, stdout=stdout, stderr=stderr)
 
 
-def handle_hosts(module, domain, exclude, counts, diff):
-    config_path = ferm_config(module, 'hosts.%s' % domain_to_extension[domain])
+def handle_hosts(module, zone, exclude, counts, diff):
+    config_path = ferm_config(module, 'hosts.%s' % zone_to_extension[zone])
     with open(config_path, 'rb') as f:
         b_lines = f.readlines()
 
@@ -252,31 +254,31 @@ def main():
                        aliases=['protocol']),
             prefixlen=dict(type='int'),
             comment=dict(type='str'),
-            domain=dict(type='str', default='internal',
-                        choices=['internal', 'blocked']),
+            zone=dict(type='str', default='internal', aliases=['domain'],
+                      choices=['internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
-            solo=dict(type='bool', default=False),
+            solo_zone=dict(type='bool', default=False, aliases=['solo']),
             reload=dict(type='bool', default=True),
             ferm_dir=dict(type='str', default='/etc/ferm'),
         ),
         supports_check_mode=True,
     )
 
-    domain = module.params['domain']
-    if domain not in domain_to_extension:
-        module.fail_json(rc=256, msg='Invalid domain argument')
+    zone = module.params['zone']
+    if zone not in zone_to_extension:
+        module.fail_json(rc=256, msg='Invalid zone argument')
 
     counts = dict(added=0, removed=0, updated=0, deduped=0)
     diff = dict(before='', after='')
 
-    changed = handle_hosts(module, domain, False, counts, diff)
+    changed = handle_hosts(module, zone, False, counts, diff)
 
-    if module.params['solo']:
-        # remove item from other domains
-        for other_domain in domain_to_extension.keys():
-            if other_domain == domain:
+    if module.params['solo_zone']:
+        # remove item from other zones
+        for other_zone in zone_to_extension.keys():
+            if other_zone == zone:
                 continue
-            excluded = handle_hosts(module, other_domain, True, counts, diff)
+            excluded = handle_hosts(module, other_zone, True, counts, diff)
             changed = changed or excluded
 
     if changed and module.params['reload'] and not module.check_mode:
