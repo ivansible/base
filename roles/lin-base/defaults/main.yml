@@ -18,6 +18,9 @@ lin_systemd_tmpfiles: true
 lin_use_docker: "{{ ansible_kernel is version('3.10', '>')
                     and ansible_virtualization_type != 'docker' }}"
 
+lin_use_python2: "{{ ansible_lsb.release is version('20.04','<') }}"
+lin_systemd_ntp: "{{ ansible_lsb.release is version('20.04','<') }}"
+
 systemd_dir: /etc/systemd/system
 local_bin: /usr/local/bin
 ...
