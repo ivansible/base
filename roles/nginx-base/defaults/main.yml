@@ -28,6 +28,7 @@ nginx_ssl_key:
 
 nginx_root_dir: /etc/nginx
 nginx_conf_dir: "{{ nginx_root_dir }}/conf.d"
+nginx_stream_dir: "{{ nginx_root_dir }}/streams.d"
 nginx_site_dir: "{{ nginx_root_dir }}/sites-enabled"
 
 nginx_def_site_dir: /var/www/dummy
@@ -39,12 +40,15 @@ uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 #
 # nginx configuration snippets
 #
+nginx_http_port: 80
+nginx_ssl_port: 443
+
 nginx_conf_listen_http:
-  "listen 80;{% if nginx_bind_ipv6 |bool %}  listen [::]:80;{% endif %}"
+  "listen {{ nginx_http_port }};{% if nginx_bind_ipv6 |bool %}  listen [::]:{{ nginx_http_port }};{% endif %}"
 nginx_conf_listen_ssl_ipv4:
-  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('127.0.0.1:', '') }}443 ssl http2"
+  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('127.0.0.1:', '') }}{{ nginx_ssl_port }} ssl http2"
 nginx_conf_listen_ssl_ipv6:
-  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('[::1]','[::]') }}:443 ssl http2"
+  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('[::1]','[::]') }}:{{ nginx_ssl_port }} ssl http2"
 nginx_conf_listen_ssl:
   "{{ nginx_conf_listen_ssl_ipv4 }};{% if nginx_bind_ipv6 |bool %}  {{ nginx_conf_listen_ssl_ipv6 }};{% endif %}"
 nginx_conf_listen:
