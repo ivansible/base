@@ -160,8 +160,9 @@ def handle_ports(module, zone, exclude, counts, diff):
         split = re.match(r'^([^;]*);(.*)$', port)
         if split:
             port, comment = split.group(1).strip(), split.group(2).strip()
+            if not port:
+                continue
         b_comment = to_bytes(comment.rstrip('\r\n'), errors='surrogate_or_strict')
-
         split = re.match(r'^([^/]+)/(tcp|udp|any)$', port)
         if split:
             port, proto = split.group(1), split.group(2)

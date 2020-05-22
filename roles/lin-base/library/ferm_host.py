@@ -170,6 +170,8 @@ def handle_hosts(module, zone, exclude, counts, diff):
         split = re.match(r'^([^;]*);(.*)$', host)
         if split:
             host, comment = split.group(1).strip(), split.group(2).strip()
+            if not host:
+                continue
         b_comment = to_bytes(comment.rstrip('\r\n'), errors='surrogate_or_strict')
 
         split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
