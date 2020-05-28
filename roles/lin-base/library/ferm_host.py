@@ -36,7 +36,7 @@ options:
       - Limits DNS search in case of symbolic hostname;
       - Ignored in case of IPv4 or IPv6 address.
     type: str
-    choices: [ ipv4, ipv6, any ]
+    choices: [ any, ipv4, ipv6 ]
     default: any
     aliases: [ protocol ]
   prefixlen:
@@ -69,11 +69,23 @@ options:
     type: bool
     default: false
     aliases: [ solo ]
+  solo_comment:
+    description:
+      - If this is I(true) and C(state) is I(present),
+        then adding an item will remove other items with the same comment.
+      - This has no effect if C(state) is I(absent) or C(comment) is empty.
+    type: bool
+    default: false
   reload:
     description:
       - Reload firewall rules in case of changes.
     type: bool
     default: true
+  backup:
+    description:
+      - Backup changed configurations.
+    type: bool
+    default: false
   ferm_dir:
     description:
       - Ferm configuration directory.
@@ -88,7 +100,7 @@ author:
 '''
 
 EXAMPLES = r'''
-- name: Block the host
+- name: Block a host
   ferm_host:
     host: badguy.com
     zone: blocked
@@ -99,33 +111,72 @@ import re
 import tempfile
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_bytes, to_native
 
-zone_to_extension = {
+FERM_DIR = '/etc/ferm'
+
+ZONES = {
     'internal': 'int',
+    'int': 'int',
     'blocked': 'block',
+    'block': 'block',
 }
+
+ENCODING = 'utf-8'
+ENCODING_ERRORS = 'strict'
+try:
+    if codecs.lookup_error('surrogateescape'):
+        ENCODING_ERRORS = 'surrogateescape'
+except (LookupError, NameError):
+    pass
+
+VALID_HOST = r'^(([0-9]{1,3}[.]){3}[0-9]{1,3}' \
+             r'|[0-9a-fA-F:]*:[0-9a-fA-F:]*' \
+             r'|[0-9a-zA-Z_.-]+)$'
+
+T_SEP = '\r\n'
+B_SEP = b'\r\n'
+B_EOL = os.linesep.encode()
+
+
+def to_bytes(obj):
+    if isinstance(obj, bytes):
+        return obj
+    elif isinstance(obj, str):
+        return obj.encode(ENCODING, ENCODING_ERRORS)
+    else:
+        raise TypeError('obj must be a string type')
+
+
+def to_text(obj):
+    if isinstance(obj, str):
+        return obj
+    elif isinstance(obj, bytes):
+        return obj.decode(ENCODING, ENCODING_ERRORS)
+    else:
+        raise TypeError('obj must be a string type')
 
 
 def ferm_config(module, filename):
-    ferm_dir = module.params['ferm_dir']
-    dest = os.path.join(ferm_dir, filename)
-    b_dest = to_bytes(dest, errors='surrogate_or_strict')
-    if not os.path.exists(b_dest):
-        module.fail_json(rc=257, msg='Config file %s does not exist!' % dest)
-
-    b_path = os.path.realpath(b_dest)
-    return to_native(b_path, errors='surrogate_or_strict')
+    dest = os.path.join(module.params['ferm_dir'], filename)
+    if not os.path.exists(to_bytes(dest)):
+        module.fail_json(msg="Config file '%s' does not exist!" % dest, rc=257)
+    return to_text(os.path.realpath(to_bytes(dest)))
 
 
-def write_changes(module, config_path, b_lines):
+def write_changes(module, path, b_lines):
+    if module.check_mode:
+        return
+    if module.params['backup']:
+        module.run_command(['cp', '-a', path, path + '~'])
     tmpfd, tmpfile = tempfile.mkstemp()
     with os.fdopen(tmpfd, 'wb') as f:
         f.writelines(b_lines)
-    module.atomic_move(tmpfile, config_path, unsafe_writes=False)
+    module.atomic_move(tmpfile, path, unsafe_writes=False)
 
 
 def reload_ferm(module):
+    if module.check_mode:
+        return
     if os.path.isdir('/proc/vz'):
         cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
     else:
@@ -137,15 +188,13 @@ def reload_ferm(module):
 
 
 def handle_hosts(module, zone, exclude, counts, diff):
-    config_path = ferm_config(module, 'hosts.%s' % zone_to_extension[zone])
-    with open(config_path, 'rb') as f:
+    path = ferm_config(module, 'hosts.%s' % ZONES[zone])
+    with open(path, 'rb') as f:
         b_lines = f.readlines()
 
     if module._diff and not exclude:
-        diff['before'] = to_native(b''.join(b_lines))
+        diff['before'] = to_text(b''.join(b_lines))
 
-    b_linesep = to_bytes(os.linesep, errors='surrogate_or_strict')
-    valid_host = r'^(([0-9]{1,3}[.]){3}[0-9]{1,3}|[0-9a-fA-F:]*:[0-9a-fA-F:]*|[0-9a-zA-Z_.-]+)$'
     changed = False
 
     for host in module.params['host']:
@@ -167,24 +216,25 @@ def handle_hosts(module, zone, exclude, counts, diff):
             else:
                 continue
 
-        split = re.match(r'^([^;]*);(.*)$', host)
+        split = re.match(r'^([^#;~]*)[#;~](.*)$', host)
         if split:
             host, comment = split.group(1).strip(), split.group(2).strip()
             if not host:
                 continue
-        b_comment = to_bytes(comment.rstrip('\r\n'), errors='surrogate_or_strict')
+        comment = comment.rstrip(T_SEP).replace('~', ' ')
+        b_comment = to_bytes(comment)
 
-        split = re.match(r'^(.+)/(ipv4|ipv6|any)$', host)
+        split = re.match(r'^(.+)/(any|ipv4|ipv6)$', host)
         if split:
             host, proto = split.group(1), split.group(2)
         split = re.match(r'^(.+)/([0-9]+)$', host)
         if split:
             host, prefixlen = split.group(1), int(split.group(2))
 
-        if not re.match(valid_host, host):
-            module.fail_json(rc=256, msg="Invalid host '%s'" % host)
+        if not re.match(VALID_HOST, host):
+            module.fail_json(msg="Invalid host '%s'" % host, rc=256)
         if prefixlen is not None and (prefixlen < 0 or prefixlen > 128):
-            module.fail_json(rc=256, msg="Invalid prefixlen %d" % prefixlen)
+            module.fail_json(msg="Invalid prefixlen %d" % prefixlen, rc=256)
 
         line = host
         if prefixlen is not None:
@@ -192,23 +242,28 @@ def handle_hosts(module, zone, exclude, counts, diff):
         if proto != 'any':
             line = '%s/%s' % (line, proto)
 
-        b_line = to_bytes(line, errors='surrogate_or_strict')
-
+        b_line = to_bytes(line)
         b_new_line = b_line
         if b_comment:
             b_new_line += b' # ' + b_comment
 
         regexp = r'^\s*(%s)\s*(?:#+\s*(.*)\s*)?$' % line
-        b_regex = re.compile(to_bytes(regexp, errors='surrogate_or_strict'))
+        b_regex = re.compile(to_bytes(regexp))
+
+        solo_comment = module.params['solo_comment'] and b_comment
+        if solo_comment:
+            comm_regexp = r'^\s*(.*)\s*#+\s*(%s)\s*$' % comment
+            b_comm_re = re.compile(to_bytes(comm_regexp))
 
         if add:
             b_prev_lines = b_lines
             b_lines = []
             found = False
+            comm_found = False
 
             for b_cur_line in b_prev_lines:
-                match = b_regex.match(b_cur_line.rstrip(b'\r\n'))
-                if match and found:
+                match = b_regex.match(b_cur_line.rstrip(B_SEP))
+                if match and (found or comm_found):
                     # remove duplicates
                     counts['deduped'] += 1
                     changed = True
@@ -217,33 +272,48 @@ def handle_hosts(module, zone, exclude, counts, diff):
                     if not b_comment or b_comment == match.group(2):
                         b_lines.append(b_cur_line)
                     else:
-                        b_lines.append(b_new_line + b_linesep)
+                        b_lines.append(b_new_line + B_EOL)
                         counts['updated'] += 1
                         changed = True
+                elif solo_comment:
+                    comm_match = b_comm_re.match(b_cur_line.rstrip(B_SEP))
+                    if comm_match and comm_found:
+                        counts['deduped'] += 1
+                        changed = True
+                    elif comm_match and not comm_found:
+                        comm_found = True
+                        if b_line == comm_match.group(1):
+                            b_lines.append(b_cur_line)
+                        else:
+                            b_lines.append(b_new_line + B_EOL)
+                            counts['updated'] += 1
+                            changed = True
+                    else:
+                        b_lines.append(b_cur_line)
                 else:
                     b_lines.append(b_cur_line)
 
-            if not found:
+            if not (found or comm_found):
                 # add to the end of file ensuring there's a newline before it
-                if b_lines and not b_lines[-1][-1:] in (b'\n', b'\r'):
-                    b_lines.append(b_linesep)
-                b_lines.append(b_new_line + b_linesep)
+                if b_lines and not b_lines[-1][-1:] in B_SEP:
+                    b_lines.append(B_EOL)
+                b_lines.append(b_new_line + B_EOL)
                 counts['added'] += 1
                 changed = True
         else:
             orig_len = len(b_lines)
             b_lines = [l for l in b_lines
-                       if not b_regex.match(l.rstrip(b'\r\n'))]
+                       if not b_regex.match(l.rstrip(B_SEP))]
             removed = orig_len - len(b_lines)
             counts['removed'] += removed
             if removed > 0:
                 changed = True
 
-    if changed and not module.check_mode:
-        write_changes(module, config_path, b_lines)
+    if changed:
+        write_changes(module, path, b_lines)
 
     if module._diff and not exclude:
-        diff['after'] = to_native(b''.join(b_lines))
+        diff['after'] = to_text(b''.join(b_lines))
 
     return changed
 
@@ -252,7 +322,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             host=dict(type='list', required=True),
-            proto=dict(type='str', default='any', choices=['ipv4', 'ipv6', 'any'],
+            proto=dict(type='str', default='any', choices=['any', 'ipv4', 'ipv6'],
                        aliases=['protocol']),
             prefixlen=dict(type='int'),
             comment=dict(type='str'),
@@ -260,30 +330,29 @@ def main():
                       choices=['internal', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             solo_zone=dict(type='bool', default=False, aliases=['solo']),
+            solo_comment=dict(type='bool', default=False),
             reload=dict(type='bool', default=True),
-            ferm_dir=dict(type='str', default='/etc/ferm'),
+            backup=dict(type='bool', default=False),
+            ferm_dir=dict(type='str', default=FERM_DIR),
         ),
         supports_check_mode=True,
     )
 
     zone = module.params['zone']
-    if zone not in zone_to_extension:
-        module.fail_json(rc=256, msg='Invalid zone argument')
+    if zone not in ZONES:
+        module.fail_json(msg="Invalid zone '%s'" % zone, rc=256)
+    zone = ZONES[zone]
 
     counts = dict(added=0, removed=0, updated=0, deduped=0)
     diff = dict(before='', after='')
 
     changed = handle_hosts(module, zone, False, counts, diff)
-
-    if module.params['solo_zone']:
-        # remove item from other zones
-        for other_zone in zone_to_extension.keys():
-            if other_zone == zone:
-                continue
+    for other_zone in set(ZONES.values()):
+        if module.params['solo_zone'] and other_zone != zone:
             excluded = handle_hosts(module, other_zone, True, counts, diff)
             changed = changed or excluded
 
-    if changed and module.params['reload'] and not module.check_mode:
+    if changed and module.params['reload']:
         reload_ferm(module)
 
     msg_list = []
