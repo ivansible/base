@@ -52,7 +52,7 @@ options:
       - C(internal) add host to the internal list;
       - C(blocked) blocks the host.
     type: str
-    choices: [ internal, blocked ]
+    choices: [ internal, blocked, nat ]
     default: external
     aliases: [ domain ]
   state:
@@ -119,6 +119,7 @@ ZONES = {
     'int': 'int',
     'blocked': 'block',
     'block': 'block',
+    'nat': 'nat',
 }
 
 ENCODING = 'utf-8'
@@ -327,7 +328,7 @@ def main():
             prefixlen=dict(type='int'),
             comment=dict(type='str'),
             zone=dict(type='str', default='internal', aliases=['domain'],
-                      choices=['internal', 'blocked']),
+                      choices=['internal', 'blocked', 'nat']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             solo_zone=dict(type='bool', default=False, aliases=['solo']),
             solo_comment=dict(type='bool', default=False),
