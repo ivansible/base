@@ -81,6 +81,7 @@ options:
       - 'C({repo_url}) - link to the repository like C(https://github.com/USERNAME/REPOSITORY)'
       - 'C({release_url}) - link to the resolved release like C(https://github.com/USERNAME/REPOSITORY/releases/tag/RELEASE)'
       - 'C({download_url}) - link to the artifact download folder for the release like C(https://github.com/USERNAME/REPOSITORY/releases/download/RELEASE)'
+      - 'C({goarch}) - go-flavored machine architecture (amd64, arm64, etc)'
     type: str
     aliases:
       - url_template
@@ -149,10 +150,23 @@ EXAMPLES = r'''
 import os
 import re
 import time
+import platform
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import ensure_text
 from ansible.module_utils.urls import fetch_url
+
+
+ARCH_2_GO = {
+    'aarch64': 'arm64',
+    'arm64': 'arm64',
+    'amd64': 'amd64',
+    'x86_64': 'amd64'
+}
+
+
+def goarch():
+    return ARCH_2_GO.get(platform.machine(), '')
 
 
 def main():
@@ -247,6 +261,7 @@ def main():
         url = url.replace('{repo_url}', url_repo)
         url = url.replace('{release_url}', url_release)
         url = url.replace('{download_url}', url_download)
+        url = url.replace('{goarch}', goarch())
         result['url_repo'] = url_repo
         result['url_release'] = url_release
         result['url_download'] = url_download
