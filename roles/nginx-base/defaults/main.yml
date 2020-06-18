@@ -43,6 +43,9 @@ uwsgi_plugin_dir: /usr/lib/uwsgi/plugins
 nginx_http_port: 80
 nginx_ssl_port: 443
 
+nginx_http_port_internal: 8888
+nginx_ssl_port_internal: 4443
+
 nginx_conf_listen_http:
   "listen {{ nginx_http_port }};{% if nginx_bind_ipv6 |bool %}  listen [::]:{{ nginx_http_port }};{% endif %}"
 nginx_conf_listen_ssl_ipv4:
