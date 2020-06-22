@@ -31,7 +31,7 @@ nginx_conf_dir: "{{ nginx_root_dir }}/conf.d"
 nginx_stream_dir: "{{ nginx_root_dir }}/streams.d"
 nginx_site_dir: "{{ nginx_root_dir }}/sites-enabled"
 
-nginx_def_site_dir: /var/www/dummy
+nginx_def_site_dir: /var/www/default
 
 uwsgi_base: /etc/uwsgi-emperor
 uwsgi_vassals: "{{ uwsgi_base }}/vassals"
