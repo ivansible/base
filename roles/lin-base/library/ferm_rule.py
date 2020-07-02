@@ -116,7 +116,7 @@ def main():
         module.fail_json(msg='Invalid rule prio: %d' % prio)
 
     hook = module.params['hook']
-    hook_dir = os.path.join(module.params['ferm_dir'], hook)
+    hook_dir = os.path.join(module.params['ferm_dir'], '%s.d' % hook)
     if not os.path.isdir(hook_dir) or not os.access(hook_dir, os.W_OK):
         module.fail_json(msg='Directory is absent or not writable: ' + hook_dir)
 
