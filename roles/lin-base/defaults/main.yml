@@ -1,10 +1,10 @@
 ---
-# lin-base/handlers: common ansible defaults used in other roles
+## common ansible defaults used in other roles
 
 hide_secrets: true
 allow_sysctl: true
 
-# choices: ufw ferm none
+## choices: ufw ferm none
 lin_firewall: ferm
 
 lin_use_ssh: true
@@ -21,6 +21,17 @@ lin_use_docker: "{{ ansible_kernel is version('3.10', '>')
 lin_use_python2: "{{ ansible_lsb.release is version('20.04','<') }}"
 lin_systemd_ntp: "{{ ansible_lsb.release is version('20.04','<') }}"
 
+## certbot settings for all cert_x roles
+certbot_use_docker: "{{ lin_use_docker }}"
+certbot_script: "{{ certbot_use_docker |bool |ternary('/usr/local/bin/certbot-docker', '/usr/bin/certbot') }}"
+
+certbot_dir: /etc/letsencrypt
+certbot_lib_dir: /var/lib/letsencrypt
+certbot_log_dir: /var/log/letsencrypt
+certbot_hook_dir: "{{ certbot_dir }}/renewal-hooks"
+certbot_post_dir: "{{ certbot_hook_dir }}/{{ certbot_use_docker |bool |ternary('post-docker', 'post') }}"
+
+## system directories
 systemd_dir: /etc/systemd/system
 local_bin: /usr/local/bin
 ...

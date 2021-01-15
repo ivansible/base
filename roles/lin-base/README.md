@@ -39,6 +39,23 @@ TBD
 TBD
 
 
+## Common certbot settings
+
+    certbot_use_docker:
+
+    certbot_script:
+
+    certbot_dir:
+
+    certbot_lib_dir:
+
+    certbot_log_dir:
+
+    certbot_hook_dir:
+
+    certbot_post_dir:
+
+
 ## Handlers
 
 - update system temp files
