@@ -1,5 +1,6 @@
 ---
-dependencies: []
+dependencies:
+  - ivansible.lin_base    # for common settings, handlers and modules
 
 galaxy_info:
   role_name: cert_base
@@ -18,6 +19,9 @@ galaxy_info:
   galaxy_tags:
     - linux
     - ansible
+    - certbot
+    - letsencrypt
+    - ssl
 
   github_branch: master
 ...
