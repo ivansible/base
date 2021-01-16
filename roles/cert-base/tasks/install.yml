@@ -1,0 +1,103 @@
+---
+- name: add certbot ppa repository (if not using docker)
+  apt_repository:
+    repo: ppa:certbot/certbot
+    ## if lsb_release executable is not installed on target,
+    ## the python aptsource module defaults to the codename "sid"
+    ## and fails. as a workaround, set codename here explicitly.
+    codename: "{{ ansible_lsb.codename }}"
+    filename: certbot
+    mode: 0644
+    update_cache: true
+  when:
+    - ansible_lsb.release is version('20.04','<')
+    - not certbot_use_docker |bool
+
+- name: install certbot packages (if using ppa)
+  apt:
+    name:
+      - certbot
+      - python3-certbot-dns-cloudflare
+      - python3-pip  # just in case
+      - ssl-cert     # for ssl-cert unix group
+    install_recommends: false
+  register: _certbot_ppa_install
+  when: not certbot_use_docker |bool
+
+
+- name: create certbot-docker wrapper (if using docker)
+  template:
+    src: certbot-docker.sh
+    dest: "{{ certbot_script }}"
+    mode: 0755
+  when: certbot_use_docker |bool
+
+- name: ensure certbot directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "{{ 0755 if item != certbot_log_dir else 0700 }}"
+  loop:
+    - "{{ certbot_dir }}"
+    - "{{ certbot_post_dir }}"
+    - "{{ certbot_lib_dir }}"
+    - "{{ certbot_log_dir }}"
+
+
+- name: create unix group for letsencrypt certificate access
+  group:
+    name: "{{ certbot_group }}"
+    state: present
+
+- name: grant certbot group access to letsencrypt files
+  file:
+    path: "{{ certbot_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ certbot_group }}"
+    mode: 0750
+  register: _certbot_group_perms
+  loop: [archive, live]
+
+- name: create directory for hooks
+  file:
+    path: "{{ certbot_hook_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when: item |d('')
+  loop:
+    - pre
+    - deploy
+    - post
+    - "{{ certbot_use_docker |bool |ternary('post-docker','') }}"
+
+- name: create post-renewal hook for docker wrapper
+  copy:
+    dest: "{{ certbot_hook_dir }}/post/setflag"
+    content: |
+      #!/bin/sh
+      echo "# $(date -Iseconds)" >> "{{ certbot_flag_file }}"
+    force: true
+    mode: 0750
+  when: certbot_use_docker |bool
+
+
+- name: collect install facts
+  set_fact:
+    _certbot_changed: "{{ install_changed or dirperm_changed }}"
+  vars:
+    install_changed: "{{ _certbot_ppa_install |d({}) is changed }}"
+    dirperm_changed: "{{ _certbot_group_perms |d({}) is changed }}"
+
+- name: stop certbot renewal timer (if requested)
+  systemd:
+    name: certbot.timer
+    state: stopped
+    enabled: false
+    daemon_reload: "{{ _certbot_changed |d(false) }}"
+  when:
+    - not certbot_use_docker |bool
+    - certbot_stop_timer |d(false) |bool
+...
