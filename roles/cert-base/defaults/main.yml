@@ -1,3 +1,21 @@
 ---
-# defaults for ivansible.cert_base
+# defaults for ivansible.cert_base and derived roles
+
+certbot_group: ssl-cert
+
+certbot_use_docker: "{{ lin_use_docker }}"
+
+certbot_dir: /etc/letsencrypt
+certbot_lib_dir: /var/lib/letsencrypt
+certbot_log_dir: /var/log/letsencrypt
+
+certbot_live_dir: "{{ certbot_dir }}/live"
+certbot_arch_dir: "{{ certbot_dir }}/archive"
+certbot_hook_dir: "{{ certbot_dir }}/renewal-hooks"
+
+certbot_post_dir: "{{ certbot_hook_dir }}/{{ certbot_use_docker |bool |ternary('post-docker', 'post') }}"
+certbot_script: "{{ certbot_use_docker |bool |ternary('/usr/local/bin/certbot-docker', '/usr/bin/certbot') }}"
+
+certbot_flag_file: "{{ certbot_log_dir }}/.renew"
+certbot_log_file: "{{ certbot_log_dir }}/letsencrypt.log"
 ...
