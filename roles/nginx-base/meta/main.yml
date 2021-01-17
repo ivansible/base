@@ -1,6 +1,7 @@
 ---
 dependencies:
   - ivansible.lin_base    # for common settings, handlers and modules
+  - ivansible.cert_base   # for common certbot settings and tasks
 
 galaxy_info:
   role_name: nginx_base

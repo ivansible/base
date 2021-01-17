@@ -70,6 +70,8 @@ None
 
 - [ivansible.lin_base](https://github.com/ivansible/lin-base)
   -- common ansible handlers and default parameters
+- [ivansible.cert_base](https://github.com/ivansible/cert-base)
+  -- common certbot settings and tasks
 
 
 ## Example Playbook

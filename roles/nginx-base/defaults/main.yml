@@ -20,11 +20,11 @@ nginx_letsencrypt_cert: ""
 nginx_ssl_cert:
   "{{ '/etc/ssl/certs/ssl-cert-snakeoil.pem'
       if nginx_letsencrypt_cert == '' else
-      '/etc/letsencrypt/live/%s/fullchain.pem' % nginx_letsencrypt_cert }}"
+      '%s/%s/fullchain.pem' % (certbot_live_dir, nginx_letsencrypt_cert) }}"
 nginx_ssl_key:
   "{{ '/etc/ssl/private/ssl-cert-snakeoil.key'
       if nginx_letsencrypt_cert == '' else
-      '/etc/letsencrypt/live/%s/privkey.pem' % nginx_letsencrypt_cert }}"
+      '%s/%s/privkey.pem' % (certbot_live_dir, nginx_letsencrypt_cert) }}"
 
 nginx_root_dir: /etc/nginx
 nginx_conf_dir: "{{ nginx_root_dir }}/conf.d"
