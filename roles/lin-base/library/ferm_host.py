@@ -50,9 +50,11 @@ options:
   zone:
     description:
       - C(internal) add host to the internal list;
+      - C(media) add host to the media list;
+      - C(nat) perform nat for this host;
       - C(blocked) blocks the host.
     type: str
-    choices: [ internal, blocked, nat ]
+    choices: [ internal, blocked, nat, media ]
     default: external
     aliases: [ domain ]
   state:
@@ -120,6 +122,7 @@ ZONES = {
     'blocked': 'block',
     'block': 'block',
     'nat': 'nat',
+    'media': 'media',
 }
 
 ENCODING = 'utf-8'
@@ -328,7 +331,7 @@ def main():
             prefixlen=dict(type='int'),
             comment=dict(type='str'),
             zone=dict(type='str', default='internal', aliases=['domain'],
-                      choices=['internal', 'blocked', 'nat']),
+                      choices=['internal', 'blocked', 'nat', 'media']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             solo_zone=dict(type='bool', default=False, aliases=['solo']),
             solo_comment=dict(type='bool', default=False),

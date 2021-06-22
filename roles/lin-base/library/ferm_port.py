@@ -39,9 +39,10 @@ options:
     description:
       - C(external) opens the port for all hosts;
       - C(internal) opens the port for internal hosts only;
+      - C(media) opens the port for both internal and media hosts;
       - C(blocked) blocks the port from external hosts.
     type: str
-    choices: [ external, internal ]
+    choices: [ external, internal, media, blocked ]
     default: external
     aliases: [ domain ]
   state:
@@ -105,10 +106,11 @@ from ansible.module_utils.basic import AnsibleModule
 FERM_DIR = '/etc/ferm'
 
 ZONES = {
-    'internal': 'int',
-    'int': 'int',
     'external': 'ext',
     'ext': 'ext',
+    'internal': 'int',
+    'int': 'int',
+    'media': 'media',
     'blocked': 'block',
     'block': 'block',
 }
@@ -308,7 +310,7 @@ def main():
                        aliases=['protocol']),
             comment=dict(type='str'),
             zone=dict(type='str', default='external', aliases=['domain'],
-                      choices=['external', 'internal', 'blocked']),
+                      choices=['external', 'internal', 'media', 'blocked']),
             state=dict(type='str', default='present', choices=['present', 'absent']),
             solo_zone=dict(type='bool', default=False, aliases=['solo']),
             solo_comment=dict(type='bool', default=False),
