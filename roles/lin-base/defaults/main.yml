@@ -11,7 +11,7 @@ lin_use_ssh: true
 lin_ssh_port: 22
 lin_ssh_keys_files: "{{ query('fileglob', 'files/lin-ssh-*.key') }}"
 
-lin_apt_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else '' }}"
+lin_apt_arch: "{{ ansible_architecture |replace('x86_64', 'amd64') |replace('aarch64', 'arm64') }}"
 
 lin_use_rsyslog: true
 lin_compress_logs: ~
