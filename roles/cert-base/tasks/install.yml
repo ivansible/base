@@ -36,7 +36,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    mode: "{{ 0755 if item != certbot_log_dir else 0700 }}"
+    mode: "{{ '0755' if item != certbot_log_dir else '0700' }}"
   loop:
     - "{{ certbot_dir }}"
     - "{{ certbot_post_dir }}"
