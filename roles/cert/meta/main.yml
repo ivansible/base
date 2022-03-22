@@ -1,6 +1,6 @@
 ---
 dependencies:
-  - ivansible.lin_base    # for common settings, handlers and modules
+  - ivansible.base.linux  # for common settings, handlers and modules
 
 galaxy_info:
   role_name: cert_base

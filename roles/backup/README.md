@@ -46,7 +46,7 @@ None
       tasks:
 
       - include_role:
-          name: ivansible.backup_base
+          name: ivansible.base.backup
           tasks_from: postgresql_db_restore_encrypted.yml
         vars:
           backup_url: https://backups.example.com/database.pgdump.gz.aes
@@ -57,7 +57,7 @@ None
           login_password: postgres-password
 
       - include_role:
-          name: ivansible.backup_base
+          name: ivansible.base.backup
           tasks_from: unarchive_encrypted.yml
         vars:
           backup_url: https://backups.example.com/archive.tar.gz.aes
@@ -68,7 +68,7 @@ None
           creates: /path/to/files/some-file.txt
 
       - import_role:
-          name: ivansible.backup_base
+          name: ivansible.base.backup
           tasks_from: install_scripts.yml
 
 
