@@ -37,5 +37,6 @@ certbot_post_dir: "{{ certbot_hook_dir }}/{{ certbot_use_docker |bool |ternary('
 systemd_dir: /etc/systemd/system
 local_bin: /usr/local/bin
 
-is_molecule_test: "{{ ansible_user_id in ['ansible', 'runner'] }}"
+is_molecule_test: "{{ lookup('env','MOLECULE_SCENARIO_NAME') != '' }}"
+is_github_test: "{{ lookup('env','GITHUB_ACTION') != '' }}"
 ...
