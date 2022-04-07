@@ -34,4 +34,12 @@
 
 - name: test module json_patch
   import_playbook: json_patch.yml
+
+- name: report success
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: report success
+      debug:
+        msg: ALL TESTS COMPLETED SUCCESSFULLY.
 ...

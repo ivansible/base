@@ -5,7 +5,7 @@
   tags: github_release
   tasks:
     - name: test split input
-      github_release:
+      ivansible.base.github_release:
         repo: vagrant-box-osx
         user: ivault
         release: latest
@@ -17,7 +17,7 @@
           - result.release == 'v0.1.0'
 
     - name: test combined repository and split release
-      github_release:
+      ivansible.base.github_release:
         repository: ivault/vagrant-box-osx
         release: v0.1.0
       register: result
@@ -26,7 +26,7 @@
         that: result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
 
     - name: test combined input
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:latest
       register: result
     - name: assert
@@ -36,7 +36,7 @@
           - result.release == 'v0.1.0'
 
     - name: test invalid non-latest release (default settings)
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx
         release: v999.99
       register: result
@@ -48,7 +48,7 @@
           - result is changed
 
     - name: test invalid non-latest release (only_latest is falsy)
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx
         release: v999.99
         only_latest: false
@@ -60,7 +60,7 @@
           - result is failed
 
     - name: test invalid repository (non-latest release)
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/no-such-repo
         release: v0.1.0
       register: result
@@ -72,7 +72,7 @@
           - result is changed
 
     - name: test invalid repository (non-latest release, only_latest is falsy)
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/no-such-repo
         release: v0.1.0
         only_latest: false
@@ -84,7 +84,7 @@
           - result is failed
 
     - name: test invalid repository (latest release)
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/no-such-repo
       register: result
       ignore_errors: true
@@ -94,7 +94,7 @@
           - result is failed
 
     - name: test without strip 'v'
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         stripv: false
       register: result
@@ -105,7 +105,7 @@
           - result.release == 'v0.1.0'
 
     - name: test with strip 'v'
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         stripv: true
       register: result
@@ -116,7 +116,7 @@
           - result.release == '0.1.0'
 
     - name: test url template with 'repo_url' and 'ver'
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         template: "{repo_url}/archive/test_{ver}.zip"
       register: result
@@ -128,7 +128,7 @@
           - result.url_release == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
 
     - name: test url template with 'download_url' and 'ver' (latest release)
-      github_release:
+      ivansible.base.github_release:
         repository: ivault/vagrant-box-osx:latest
         template: "{download_url}/test_{ver}.zip"
       register: result
@@ -141,7 +141,7 @@
           - result.url_download == 'https://github.com/ivault/vagrant-box-osx/releases/download/v0.1.0'
 
     - name: test url template with 'release_url' and stripped 'ver'
-      github_release:
+      ivansible.base.github_release:
         repo: vagrant-box-osx
         user: ivault
         release: v0.1.0
@@ -157,7 +157,7 @@
           - result.url_download == 'https://github.com/ivault/vagrant-box-osx/releases/download/v0.1.0'
 
     - name: test url template with invalid replacement and 'ver'
-      github_release:
+      ivansible.base.github_release:
         repository: ivault/vagrant-box-osx:v0.1.0
         template: "{invalid_url}/test_ver{ver}.zip"
       register: result
@@ -167,7 +167,7 @@
           - result.url == '{invalid_url}/test_verv0.1.0.zip'
 
     - name: test 'creates' with absent file
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         creates: /no-such-file
       register: result
@@ -176,7 +176,7 @@
         that: result is changed
 
     - name: test 'creates' with existing file
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         creates: /bin/sh
       register: result
@@ -185,7 +185,7 @@
         that: result is not changed
 
     - name: test 'creates' with existing file and reinstall allowed
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         creates: /bin/sh
         reinstall: true
@@ -195,7 +195,7 @@
         that: result is changed
 
     - name: test version script with equal version
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         script: "echo 'installed version: v0.1.0' && echo OK"
         regex: "v[0-9][0-9a-z.-]+"
@@ -208,7 +208,7 @@
           - result.release == 'v0.1.0'
 
     - name: test version script with equal version and reinstall
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         script: "echo 'installed version: v0.1.0' && echo OK"
         regex: "v[0-9][0-9a-z.-]+"
@@ -223,7 +223,7 @@
           - "'(forced reinstall)' in result.msg"
 
     - name: test version script with different version
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         script: "echo 'installed version: v0.1.5' && echo OK"
         regex: "v[0-9][0-9a-z.-]+"
@@ -236,7 +236,7 @@
           - result.release == 'v0.1.0'
 
     - name: test version script with failed script
-      github_release:
+      ivansible.base.github_release:
         repo: ivault/vagrant-box-osx:v0.1.0
         script: "/no-such-program"
       register: result

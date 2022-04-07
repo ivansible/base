@@ -10,6 +10,7 @@
       copy:
         content: '{"foo": {"one": 1, "bar": "baz"}}'  # noqa 206
         dest: "{{ test_json }}"
+        mode: 0644
     - name: get checksum of original json
       stat:
         path: "{{ test_json }}"
@@ -28,7 +29,7 @@
           - data0.content |b64decode |from_json |json_query('foo.uno') is none
 
     - name: add the 'qux' member to json and back it up
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: add
@@ -59,7 +60,7 @@
         msg: "{{ add1.backup }}"
 
     - name: add the 'qux' member again
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: add
@@ -72,7 +73,7 @@
         that: add2 is not changed
 
     - name: remove the 'bar' member from json
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: remove
@@ -90,7 +91,7 @@
           - data2.content |b64decode |from_json |json_query('foo.bar') is none
 
     - name: remove the 'bar' member again
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: remove
@@ -105,13 +106,14 @@
         remote_src: true
         src: "{{ add1.backup }}"
         dest: "{{ test_json }}"
+        mode: 0644
       register: restore1
     - name: assert that restored file is dentical to original json
       assert:
         that: restore1.checksum == file1.stat.checksum
 
     - name: move the 'one' member to 'uno'
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: move
@@ -131,7 +133,7 @@
           - data3.content |b64decode |from_json | json_query('foo.uno') == 1
 
     - name: move the 'one' member to 'uno' again
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: move
@@ -143,7 +145,7 @@
         that: move2 is not changed
 
     - name: replace the 'uno' member with a new value
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: replace
@@ -162,7 +164,7 @@
           - data4.content |b64decode |from_json |json_query('foo.uno') == 'one'
 
     - name: replace the 'uno' member's value again
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: replace
@@ -174,7 +176,7 @@
         that: replace2 is not changed
 
     - name: copy the 'uno' member into a new member and change its value
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: copy
@@ -193,7 +195,7 @@
           - data5.content |b64decode |from_json |json_query('foo.dos') == 'one'
 
     - name: copy the 'uno' member into a new member again
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: copy
@@ -205,7 +207,7 @@
         that: copy2 is not changed
 
     - name: test the value of 'dos' is 'two'
-      json_patch:
+      ivansible.base.json_patch:
         src: "{{ test_json }}"
         operations:
           - op: test

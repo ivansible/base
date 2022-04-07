@@ -34,7 +34,7 @@
         path: ~/go
 
     - name: install gox
-      go:
+      ivansible.base.go:
         state: present
         name: github.com/mitchellh/gox
       register: result
@@ -43,7 +43,7 @@
         that: result is changed
 
     - name: try to install gox again
-      go:
+      ivansible.base.go:
         state: present
         name: github.com/mitchellh/gox
       register: result
@@ -64,13 +64,14 @@
       file:
         state: directory
         path: ~/go/src/github.com/mitchellh/gox
+        mode: 0755
       register: result
     - name: assert that gox source is present
       assert:
         that: result is not changed
 
     - name: remove gox
-      go:
+      ivansible.base.go:
         state: absent
         name: github.com/mitchellh/gox
       register: result
@@ -79,7 +80,7 @@
         that: result is changed
 
     - name: try to remove gox again
-      go:
+      ivansible.base.go:
         state: absent
         name: github.com/mitchellh/gox
       register: result

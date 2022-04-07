@@ -29,10 +29,10 @@ scenario:
     - lint
     - destroy
     - create
-    - prepare
-    - converge
-    - idempotence
-    - verify
+    # prepare
+    - converge  # actual test is here
+    # idempotence
+    # verify
     - destroy
   create_sequence:
     - create
