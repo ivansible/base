@@ -108,13 +108,21 @@ EXAMPLES = r'''
     zone: blocked
 '''
 
-import os
 import re
-import tempfile
 
 from ansible.module_utils.basic import AnsibleModule
 
-FERM_DIR = '/etc/ferm'
+from ansible_collections.ivansible.base.plugins.module_utils.ferm import (
+    FERM_DIR,
+    T_SEP,
+    B_SEP,
+    B_EOL,
+    to_bytes,
+    to_text,
+    ferm_config,
+    write_changes,
+    handle_list,
+)
 
 ZONES = {
     'internal': 'int',
@@ -125,70 +133,9 @@ ZONES = {
     'media': 'media',
 }
 
-ENCODING = 'utf-8'
-ENCODING_ERRORS = 'strict'
-try:
-    if codecs.lookup_error('surrogateescape'):
-        ENCODING_ERRORS = 'surrogateescape'
-except (LookupError, NameError):
-    pass
-
 VALID_HOST = r'^(([0-9]{1,3}[.]){3}[0-9]{1,3}' \
              r'|[0-9a-fA-F:]*:[0-9a-fA-F:]*' \
              r'|[0-9a-zA-Z_.-]+)$'
-
-T_SEP = '\r\n'
-B_SEP = b'\r\n'
-B_EOL = os.linesep.encode()
-
-
-def to_bytes(obj):
-    if isinstance(obj, bytes):
-        return obj
-    elif isinstance(obj, str):
-        return obj.encode(ENCODING, ENCODING_ERRORS)
-    else:
-        raise TypeError('obj must be a string type')
-
-
-def to_text(obj):
-    if isinstance(obj, str):
-        return obj
-    elif isinstance(obj, bytes):
-        return obj.decode(ENCODING, ENCODING_ERRORS)
-    else:
-        raise TypeError('obj must be a string type')
-
-
-def ferm_config(module, filename):
-    dest = os.path.join(module.params['ferm_dir'], filename)
-    if not os.path.exists(to_bytes(dest)):
-        module.fail_json(msg="Config file '%s' does not exist!" % dest, rc=257)
-    return to_text(os.path.realpath(to_bytes(dest)))
-
-
-def write_changes(module, path, b_lines):
-    if module.check_mode:
-        return
-    if module.params['backup']:
-        module.run_command(['cp', '-a', path, path + '~'])
-    tmpfd, tmpfile = tempfile.mkstemp()
-    with os.fdopen(tmpfd, 'wb') as f:
-        f.writelines(b_lines)
-    module.atomic_move(tmpfile, path, unsafe_writes=False)
-
-
-def reload_ferm(module):
-    if module.check_mode:
-        return
-    if os.path.isdir('/proc/vz'):
-        cmd = ['systemctl', 'reload-or-restart', 'ferm.service']
-    else:
-        cmd = ['ferm-ipset']
-    rc, stdout, stderr = module.run_command(cmd)
-    if rc:
-        module.fail_json(msg='Failed to reload ferm',
-                         rc=rc, stdout=stdout, stderr=stderr)
 
 
 def handle_hosts(module, zone, exclude, counts, diff):
@@ -306,8 +253,8 @@ def handle_hosts(module, zone, exclude, counts, diff):
                 changed = True
         else:
             orig_len = len(b_lines)
-            b_lines = [l for l in b_lines
-                       if not b_regex.match(l.rstrip(B_SEP))]
+            b_lines = [ln for ln in b_lines
+                       if not b_regex.match(ln.rstrip(B_SEP))]
             removed = orig_len - len(b_lines)
             counts['removed'] += removed
             if removed > 0:
@@ -341,41 +288,7 @@ def main():
         ),
         supports_check_mode=True,
     )
-
-    zone = module.params['zone']
-    if zone not in ZONES:
-        module.fail_json(msg="Invalid zone '%s'" % zone, rc=256)
-    zone = ZONES[zone]
-
-    counts = dict(added=0, removed=0, updated=0, deduped=0)
-    diff = dict(before='', after='')
-
-    changed = handle_hosts(module, zone, False, counts, diff)
-    for other_zone in set(ZONES.values()):
-        if module.params['solo_zone'] and other_zone != zone:
-            excluded = handle_hosts(module, other_zone, True, counts, diff)
-            changed = changed or excluded
-
-    if changed and module.params['reload']:
-        reload_ferm(module)
-
-    msg_list = []
-    result = {}
-    if counts['added'] > 0:
-        result['added'] = counts['added']
-        msg_list.append('%d host(s) added' % counts['added'])
-    if counts['removed'] > 0:
-        result['removed'] = counts['removed']
-        msg_list.append('%d host(s) removed' % counts['removed'])
-    if counts['updated'] > 0:
-        result['updated'] = counts['updated']
-        msg_list.append('%d comment(s) updated' % counts['updated'])
-    if counts['deduped'] > 0:
-        result['deduped'] = counts['deduped']
-        msg_list.append('%d duplicate(s) removed' % counts['deduped'])
-    msg = ', '.join(msg_list)
-
-    module.exit_json(changed=changed, msg=msg, diff=diff, **result)
+    handle_list(module, handle_hosts, ZONES, 'host')
 
 
 if __name__ == '__main__':
