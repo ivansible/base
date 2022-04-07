@@ -5,13 +5,127 @@
   become: true
   tags: ferm_rule
   tasks:
-    - name: try to use ferm_rule
-      ivansible.base.ferm_rule:
-        name: rule1
-        rule: |
-          domain ip table filter chain INPUT proto udp dport 12345 REJECT;
-        hook: custom
-    - name: TBD
+    - name: stat 1st rule file
+      stat:
+        path: /etc/ferm/custom.d/41-myrule.ferm
+      register: rule1
+    - name: stat 2nd rule file
+      stat:
+        path: /etc/ferm/custom.d/42-myrule.ferm
+      register: rule2
+    - name: assert that both rule files are absent
       assert:
-        that: true
+        that:
+          - not rule1.stat.exists
+          - not rule2.stat.exists
+
+    - name: add new ferm rule
+      ivansible.base.ferm_rule:
+        name: myrule
+        prio: 41
+        rule: |
+          domain ip table filter chain INPUT proto udp dport 4441 REJECT;
+        hook: custom
+    - name: stat 1st rule file
+      stat:
+        path: /etc/ferm/custom.d/41-myrule.ferm
+      register: rule1
+    - name: stat 2nd rule file
+      stat:
+        path: /etc/ferm/custom.d/42-myrule.ferm
+      register: rule2
+    - name: assert that only 1st rule file is present
+      assert:
+        that:
+          - rule1.stat.exists
+          - not rule2.stat.exists
+    - name: get content of 1st rule file
+      slurp:
+        src: /etc/ferm/custom.d/41-myrule.ferm
+      register: data
+    - name: assert that 1st rule text is valid
+      assert:
+        that:
+          - data.content |b64decode is search('4441')
+          - data.content |b64decode is not search('4442')
+
+    - name: change rule priority
+      ivansible.base.ferm_rule:
+        name: myrule
+        prio: 42
+        rule: |
+          domain ip table filter chain INPUT proto udp dport 4441 REJECT;
+        hook: custom
+    - name: stat 1st rule file
+      stat:
+        path: /etc/ferm/custom.d/41-myrule.ferm
+      register: rule1
+    - name: stat 2nd rule file
+      stat:
+        path: /etc/ferm/custom.d/42-myrule.ferm
+      register: rule2
+    - name: assert that only 2nd rule file is present
+      assert:
+        that:
+          - not rule1.stat.exists
+          - rule2.stat.exists
+    - name: get content of 2nd rule file
+      slurp:
+        src: /etc/ferm/custom.d/42-myrule.ferm
+      register: data
+    - name: assert that 2nd rule text is valid
+      assert:
+        that:
+          - data.content |b64decode is search('4441')
+          - data.content |b64decode is not search('4442')
+
+    - name: change rule text
+      ivansible.base.ferm_rule:
+        name: myrule
+        prio: 42
+        rule: |
+          domain ip table filter chain INPUT proto udp dport 4442 REJECT;
+        hook: custom
+    - name: stat 1st rule file
+      stat:
+        path: /etc/ferm/custom.d/41-myrule.ferm
+      register: rule1
+    - name: stat 2nd rule file
+      stat:
+        path: /etc/ferm/custom.d/42-myrule.ferm
+      register: rule2
+    - name: assert that only 2nd rule file is present
+      assert:
+        that:
+          - not rule1.stat.exists
+          - rule2.stat.exists
+    - name: get content of 2nd rule file
+      slurp:
+        src: /etc/ferm/custom.d/42-myrule.ferm
+      register: data
+    - name: assert that 2nd rule text is valid
+      assert:
+        that:
+          - data.content |b64decode is not search('4441')
+          - data.content |b64decode is search('4442')
+
+    - name: remove my rule
+      ivansible.base.ferm_rule:
+        name: myrule
+        prio: 42
+        hook: custom
+        state: absent
+    - name: stat 1st rule file
+      stat:
+        path: /etc/ferm/custom.d/41-myrule.ferm
+      register: rule1
+    - name: stat 2nd rule file
+      stat:
+        path: /etc/ferm/custom.d/42-myrule.ferm
+      register: rule2
+    - name: assert that both rule files are absent
+      assert:
+        that:
+          - not rule1.stat.exists
+          - not rule2.stat.exists
 ...

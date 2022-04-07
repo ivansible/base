@@ -5,10 +5,141 @@
   become: true
   tags: ferm_host
   tasks:
-    - name: try to use ferm_host
-      ivansible.base.ferm_host:
-        host: 127.0.0.1
-    - name: TBD
+    ## test internal hosts
+    - name: get content of hosts.int
+      slurp:
+        src: /etc/ferm/hosts.int
+      register: data
+    - name: assert that both internal hosts are absent
       assert:
-        that: true
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
+
+    - name: add 1st internal host
+      ivansible.base.ferm_host:
+        host: 192.168.99.1
+        zone: internal
+    - name: get content of hosts.int
+      slurp:
+        src: /etc/ferm/hosts.int
+      register: data
+    - name: assert that only 1st internal host is present
+      assert:
+        that:
+          - data.content |b64decode is search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
+
+    - name: add 2nd internal host
+      ivansible.base.ferm_host:
+        host: 192.168.99.2
+        zone: internal
+    - name: get content of hosts.int
+      slurp:
+        src: /etc/ferm/hosts.int
+      register: data
+    - name: assert that both internal hosts are present
+      assert:
+        that:
+          - data.content |b64decode is search('192.168.99.1')
+          - data.content |b64decode is search('192.168.99.2')
+
+    - name: remove 1st internal host
+      ivansible.base.ferm_host:
+        host: 192.168.99.1
+        zone: internal
+        state: absent
+    - name: get content of hosts.int
+      slurp:
+        src: /etc/ferm/hosts.int
+      register: data
+    - name: assert that only 2nd internal host is present
+      assert:
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is search('192.168.99.2')
+
+    - name: remove 2nd internal host
+      ivansible.base.ferm_host:
+        host: 192.168.99.2
+        zone: internal
+        state: absent
+    - name: get content of hosts.int
+      slurp:
+        src: /etc/ferm/hosts.int
+      register: data
+    - name: assert that both internal hosts are absent
+      assert:
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
+
+    ## test blocked hosts
+    - name: get content of hosts.block
+      slurp:
+        src: /etc/ferm/hosts.block
+      register: data
+    - name: assert that both blocked hosts are absent
+      assert:
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
+
+    - name: add 1st blocked host
+      ivansible.base.ferm_host:
+        host: 192.168.99.1
+        zone: blocked
+    - name: get content of hosts.block
+      slurp:
+        src: /etc/ferm/hosts.block
+      register: data
+    - name: assert that only 1st blocked host is present
+      assert:
+        that:
+          - data.content |b64decode is search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
+
+    - name: add 2nd blocked host
+      ivansible.base.ferm_host:
+        host: 192.168.99.2
+        zone: blocked
+    - name: get content of hosts.block
+      slurp:
+        src: /etc/ferm/hosts.block
+      register: data
+    - name: assert that both blocked hosts are present
+      assert:
+        that:
+          - data.content |b64decode is search('192.168.99.1')
+          - data.content |b64decode is search('192.168.99.2')
+
+    - name: remove 1st blocked host
+      ivansible.base.ferm_host:
+        host: 192.168.99.1
+        zone: blocked
+        state: absent
+    - name: get content of hosts.block
+      slurp:
+        src: /etc/ferm/hosts.block
+      register: data
+    - name: assert that only 2nd blocked host is present
+      assert:
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is search('192.168.99.2')
+
+    - name: remove 2nd blocked host
+      ivansible.base.ferm_host:
+        host: 192.168.99.2
+        zone: blocked
+        state: absent
+    - name: get content of hosts.block
+      slurp:
+        src: /etc/ferm/hosts.block
+      register: data
+    - name: assert that both blocked hosts are absent
+      assert:
+        that:
+          - data.content |b64decode is not search('192.168.99.1')
+          - data.content |b64decode is not search('192.168.99.2')
 ...
