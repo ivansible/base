@@ -1,0 +1,107 @@
+---
+- name: test module go
+  hosts: all
+  gather_facts: false
+  tags: go
+  vars:
+    gover: '1.13'  # golang version on focal
+  tasks:
+    - name: install golang toolchain
+      become: true
+      apt:
+        name:
+          - git
+          - golang-{{ gover }}
+        force_apt_get: true
+    - name: link go binary into path
+      become: true
+      file:
+        state: link
+        src: /usr/lib/go-{{ gover }}/bin/go
+        dest: /usr/bin/go
+
+    - name: check go environment
+      command: go env
+      register: result
+      changed_when: false
+    - name: assert go_root
+      assert:
+        that: result.stdout |regex_search('GOROOT="/usr/lib/go-{{ gover }}"')  # " dummy quote to fix vim syntax
+
+    - name: remove go dir from previous test runs
+      file:
+        state: absent
+        path: ~/go
+
+    - name: install gox
+      go:
+        state: present
+        name: github.com/mitchellh/gox
+      register: result
+    - name: assert that gox is really installed
+      assert:
+        that: result is changed
+
+    - name: try to install gox again
+      go:
+        state: present
+        name: github.com/mitchellh/gox
+      register: result
+    - name: assert that gox is not changed
+      assert:
+        that: result is not changed
+
+    - name: check presence of gox binary
+      file:
+        state: file
+        path: ~/go/bin/gox
+      register: result
+    - name: assert that gox binary is present
+      assert:
+        that: result is not changed
+
+    - name: check presence of gox sources
+      file:
+        state: directory
+        path: ~/go/src/github.com/mitchellh/gox
+      register: result
+    - name: assert that gox source is present
+      assert:
+        that: result is not changed
+
+    - name: remove gox
+      go:
+        state: absent
+        name: github.com/mitchellh/gox
+      register: result
+    - name: assert that gox is really removed
+      assert:
+        that: result is changed
+
+    - name: try to remove gox again
+      go:
+        state: absent
+        name: github.com/mitchellh/gox
+      register: result
+    - name: assert that gox is not changed
+      assert:
+        that: result is not changed
+
+    - name: check absense of gox binary
+      file:
+        state: absent
+        path: ~/go/bin/gox
+      register: result
+    - name: assert that gox binary is absent
+      assert:
+        that: result is not changed
+
+    - name: check absense of gox sources
+      file:
+        state: absent
+        path: ~/go/src/github.com/mitchellh/gox
+      register: result
+    - name: assert that gox source is absent
+      assert:
+        that: result is not changed
+...

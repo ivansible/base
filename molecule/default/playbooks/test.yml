@@ -1,0 +1,37 @@
+---
+- name: gather facts
+  hosts: all
+  gather_facts: true
+  tags: always
+
+- name: prepare environment for ferm modules
+  hosts: all
+  gather_facts: false
+  tags: prepare_ferm
+  vars:
+    ferm_install: true
+    ferm_ports_external: []
+    ferm_hosts_internal: []
+    ## workaround for IPv6 table NAT failing in Docker on GitHub runners
+    ferm_ipv6: false
+  roles:
+    - ivansible.linux.ferm
+
+- name: test module ferm_host.yml
+  import_playbook: ferm_host.yml
+
+- name: test module ferm_port.yml
+  import_playbook: ferm_port.yml
+
+- name: test module ferm_rule.yml
+  import_playbook: ferm_rule.yml
+
+- name: test module github_release
+  import_playbook: github_release.yml
+
+- name: test module go
+  import_playbook: go.yml
+
+- name: test module json_patch
+  import_playbook: json_patch.yml
+...

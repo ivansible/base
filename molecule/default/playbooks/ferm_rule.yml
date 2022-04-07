@@ -1,0 +1,17 @@
+---
+- name: test module ferm_rule
+  hosts: all
+  gather_facts: false
+  become: true
+  tags: ferm_rule
+  tasks:
+    - name: try to use ferm_rule
+      ferm_rule:
+        name: rule1
+        rule: |
+          domain ip table filter chain INPUT proto udp dport 12345 REJECT;
+        hook: custom
+    - name: TBD
+      assert:
+        that: true
+...

@@ -1,0 +1,14 @@
+---
+- name: test module ferm_host
+  hosts: all
+  gather_facts: false
+  become: true
+  tags: ferm_host
+  tasks:
+    - name: try to use ferm_host
+      ferm_host:
+        host: 127.0.0.1
+    - name: TBD
+      assert:
+        that: true
+...

@@ -1,0 +1,14 @@
+---
+- name: test module ferm_port
+  hosts: all
+  gather_facts: false
+  become: true
+  tags: ferm_port
+  tasks:
+    - name: try to use ferm_port
+      ferm_port:
+        port: 12345
+    - name: TBD
+      assert:
+        that: true
+...
