@@ -17,8 +17,7 @@ lin_use_rsyslog: true
 lin_compress_logs: ~
 lin_systemd_tmpfiles: true
 
-lin_use_docker: "{{ ansible_kernel is version('3.10', '>')
-                    and ansible_connection |d('') != 'docker' }}"
+lin_use_docker: "{{ ansible_kernel is version('3.10', '>') and not is_docker_target }}"
 
 lin_use_python2: "{{ ansible_lsb.release is version('20.04','<') }}"
 lin_systemd_ntp: "{{ ansible_lsb.release is version('20.04','<') }}"
@@ -39,4 +38,6 @@ local_bin: /usr/local/bin
 
 is_molecule_test: "{{ lookup('env','MOLECULE_SCENARIO_NAME') != '' }}"
 is_github_test: "{{ lookup('env','GITHUB_ACTION') != '' }}"
+is_docker_target: "{{ ansible_connection |d('') is search('docker') }}"
+is_local_target: "{{ ansible_connection |d('') == 'local' }}"
 ...
