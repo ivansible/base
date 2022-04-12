@@ -21,7 +21,8 @@
           environment:
             AESPASS: "{{ backup_secret }}"
       rescue:
-        - fail:
+        - name: backup_secret is a hard requirement
+          fail:
             msg: "please provide correct backup_secret for {{ backup_url | basename }}"
 
     - name: restore database from dump
