@@ -7,11 +7,11 @@
   tasks:
     ## test internal ports
     - name: get content of ports.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.int
       register: data
     - name: assert that both internal ports are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is not search('9992')
@@ -21,11 +21,11 @@
         port: 9991
         zone: internal
     - name: get content of ports.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.int
       register: data
     - name: assert that only 1st internal port is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('9991')
           - data.content |b64decode is not search('9992')
@@ -35,11 +35,11 @@
         port: 9992
         zone: internal
     - name: get content of ports.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.int
       register: data
     - name: assert that both internal ports are present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('9991')
           - data.content |b64decode is search('9992')
@@ -50,11 +50,11 @@
         zone: internal
         state: absent
     - name: get content of ports.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.int
       register: data
     - name: assert that only 2nd internal port is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is search('9992')
@@ -65,22 +65,22 @@
         zone: internal
         state: absent
     - name: get content of ports.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.int
       register: data
     - name: assert that both internal ports are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is not search('9992')
 
     ## test external ports
     - name: get content of ports.ext
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.ext
       register: data
     - name: assert that both external ports are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is not search('9992')
@@ -90,11 +90,11 @@
         port: 9991
         zone: external
     - name: get content of ports.ext
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.ext
       register: data
     - name: assert that only 1st external port is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('9991')
           - data.content |b64decode is not search('9992')
@@ -104,11 +104,11 @@
         port: 9992
         zone: external
     - name: get content of ports.ext
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.ext
       register: data
     - name: assert that both external ports are present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('9991')
           - data.content |b64decode is search('9992')
@@ -119,11 +119,11 @@
         zone: external
         state: absent
     - name: get content of ports.ext
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.ext
       register: data
     - name: assert that only 2nd external port is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is search('9992')
@@ -134,11 +134,11 @@
         zone: external
         state: absent
     - name: get content of ports.ext
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/ports.ext
       register: data
     - name: assert that both external ports are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('9991')
           - data.content |b64decode is not search('9992')

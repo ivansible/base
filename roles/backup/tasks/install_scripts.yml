@@ -2,13 +2,13 @@
 # install backup-restore scripts on target host
 - block:
     - name: directory for backup-restore scripts
-      file:
+      ansible.builtin.file:
         path: /usr/local/bin
         state: directory
         mode: 0755
 
     - name: install encrypt-decrypt scripts
-      copy:
+      ansible.builtin.copy:
         src: scripts/{{ item }}
         dest: /usr/local/bin/{{ item }}
         owner: root

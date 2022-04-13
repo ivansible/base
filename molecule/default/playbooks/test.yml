@@ -40,6 +40,6 @@
   gather_facts: false
   tasks:
     - name: report success
-      debug:
+      ansible.builtin.debug:
         msg: ALL TESTS COMPLETED SUCCESSFULLY.
 ...

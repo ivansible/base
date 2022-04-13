@@ -11,7 +11,7 @@
         release: latest
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
           - result.release == 'v0.1.0'
@@ -22,7 +22,7 @@
         release: v0.1.0
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that: result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
 
     - name: test combined input
@@ -30,7 +30,7 @@
         repo: ivault/vagrant-box-osx:latest
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
           - result.release == 'v0.1.0'
@@ -42,7 +42,7 @@
       register: result
       ignore_errors: true
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is not failed
           - result is changed
@@ -55,7 +55,7 @@
       register: result
       ignore_errors: true
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is failed
 
@@ -66,7 +66,7 @@
       register: result
       ignore_errors: true
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is not failed
           - result is changed
@@ -79,7 +79,7 @@
       register: result
       ignore_errors: true
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is failed
 
@@ -89,7 +89,7 @@
       register: result
       ignore_errors: true
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is failed
 
@@ -99,7 +99,7 @@
         stripv: false
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
           - result.release == 'v0.1.0'
@@ -110,7 +110,7 @@
         stripv: true
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0'
           - result.release == '0.1.0'
@@ -121,7 +121,7 @@
         template: "{repo_url}/archive/test_{ver}.zip"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/archive/test_v0.1.0.zip'
           - result.url_repo == 'https://github.com/ivault/vagrant-box-osx'
@@ -133,7 +133,7 @@
         template: "{download_url}/test_{ver}.zip"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/download/v0.1.0/test_v0.1.0.zip'
           - result.url_repo == 'https://github.com/ivault/vagrant-box-osx'
@@ -149,7 +149,7 @@
         stripv: true
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == 'https://github.com/ivault/vagrant-box-osx/releases/tag/v0.1.0/test_ver0.1.0.zip'
           - result.url_repo == 'https://github.com/ivault/vagrant-box-osx'
@@ -162,7 +162,7 @@
         template: "{invalid_url}/test_ver{ver}.zip"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result.url == '{invalid_url}/test_verv0.1.0.zip'
 
@@ -172,7 +172,7 @@
         creates: /no-such-file
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that: result is changed
 
     - name: test 'creates' with existing file
@@ -181,7 +181,7 @@
         creates: /bin/sh
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: test 'creates' with existing file and reinstall allowed
@@ -191,7 +191,7 @@
         reinstall: true
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that: result is changed
 
     - name: test version script with equal version
@@ -201,7 +201,7 @@
         regex: "v[0-9][0-9a-z.-]+"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is not changed
           - result.installed == 'v0.1.0'
@@ -215,7 +215,7 @@
         reinstall: true
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is changed
           - result.installed == 'v0.1.0'
@@ -229,7 +229,7 @@
         regex: "v[0-9][0-9a-z.-]+"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is changed
           - result.installed == 'v0.1.5'
@@ -241,7 +241,7 @@
         script: "/no-such-program"
       register: result
     - name: assert
-      assert:
+      ansible.builtin.assert:
         that:
           - result is changed
           - result.installed is none

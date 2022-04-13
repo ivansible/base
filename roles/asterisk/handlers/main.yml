@@ -3,20 +3,20 @@
 
 - name: restart asterisk service (nowait)
   listen: restart asterisk service
-  systemd:
+  ansible.builtin.systemd:
     name: asterisk
     state: restarted
   become: true
 
 - name: restart asterisk service (delay)
   listen: restart asterisk service
-  wait_for:
+  ansible.builtin.wait_for:
     timeout: "{{ ast_restart_delay }}"
 
 # Note: please use either restart (ast_core) or reload (other asterisk roles)
 #       don't mix!
 - name: reload asterisk service
-  systemd:
+  ansible.builtin.systemd:
     name: asterisk
     state: reloaded
   become: true

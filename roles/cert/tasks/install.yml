@@ -1,6 +1,6 @@
 ---
 - name: add certbot ppa repository (if not using docker)
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: ppa:certbot/certbot
     ## if lsb_release executable is not installed on target,
     ## the python aptsource module defaults to the codename "sid"
@@ -14,7 +14,7 @@
     - not certbot_use_docker |bool
 
 - name: install certbot packages (if using ppa)
-  apt:
+  ansible.builtin.apt:
     name:
       - certbot
       - python3-certbot-dns-cloudflare
@@ -26,14 +26,14 @@
 
 
 - name: create certbot-docker wrapper (if using docker)
-  template:
+  ansible.builtin.template:
     src: certbot-docker.sh
     dest: "{{ certbot_script }}"
     mode: 0755
   when: certbot_use_docker |bool
 
 - name: ensure certbot directories exist
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "{{ '0755' if item != certbot_log_dir else '0700' }}"
@@ -45,12 +45,12 @@
 
 
 - name: create unix group for letsencrypt certificate access
-  group:
+  ansible.builtin.group:
     name: "{{ certbot_group }}"
     state: present
 
 - name: grant certbot group access to letsencrypt files
-  file:
+  ansible.builtin.file:
     path: "{{ certbot_dir }}/{{ item }}"
     state: directory
     owner: root
@@ -60,7 +60,7 @@
   loop: [archive, live]
 
 - name: create directory for hooks
-  file:
+  ansible.builtin.file:
     path: "{{ certbot_hook_dir }}/{{ item }}"
     state: directory
     owner: root
@@ -74,7 +74,7 @@
     - "{{ certbot_use_docker |bool |ternary('post-docker','') }}"
 
 - name: create post-renewal hook for docker wrapper
-  copy:
+  ansible.builtin.copy:
     dest: "{{ certbot_hook_dir }}/post/setflag"
     content: |
       #!/bin/sh
@@ -85,14 +85,14 @@
 
 
 - name: collect install facts
-  set_fact:
+  ansible.builtin.set_fact:
     _certbot_changed: "{{ install_changed or dirperm_changed }}"
   vars:
     install_changed: "{{ _certbot_ppa_install |d({}) is changed }}"
     dirperm_changed: "{{ _certbot_group_perms |d({}) is changed }}"
 
 - name: stop certbot renewal timer (if requested)
-  systemd:
+  ansible.builtin.systemd:
     name: certbot.timer
     state: stopped
     enabled: false

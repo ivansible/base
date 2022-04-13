@@ -8,28 +8,28 @@
   tasks:
     - name: install golang toolchain
       become: true
-      apt:
+      ansible.builtin.apt:
         name:
           - git
           - golang-{{ gover }}
         force_apt_get: true
     - name: link go binary into path
       become: true
-      file:
+      ansible.builtin.file:
         state: link
         src: /usr/lib/go-{{ gover }}/bin/go
         dest: /usr/bin/go
 
     - name: check go environment
-      command: go env
+      ansible.builtin.command: go env
       register: result
       changed_when: false
     - name: assert go_root
-      assert:
+      ansible.builtin.assert:
         that: result.stdout |regex_search('GOROOT="/usr/lib/go-{{ gover }}"')  # " dummy quote to fix vim syntax
 
     - name: remove go dir from previous test runs
-      file:
+      ansible.builtin.file:
         state: absent
         path: ~/go
 
@@ -39,7 +39,7 @@
         name: github.com/mitchellh/gox
       register: result
     - name: assert that gox is really installed
-      assert:
+      ansible.builtin.assert:
         that: result is changed
 
     - name: try to install gox again
@@ -48,26 +48,26 @@
         name: github.com/mitchellh/gox
       register: result
     - name: assert that gox is not changed
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: check presence of gox binary
-      file:
+      ansible.builtin.file:
         state: file
         path: ~/go/bin/gox
       register: result
     - name: assert that gox binary is present
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: check presence of gox sources
-      file:
+      ansible.builtin.file:
         state: directory
         path: ~/go/src/github.com/mitchellh/gox
         mode: 0755
       register: result
     - name: assert that gox source is present
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: remove gox
@@ -76,7 +76,7 @@
         name: github.com/mitchellh/gox
       register: result
     - name: assert that gox is really removed
-      assert:
+      ansible.builtin.assert:
         that: result is changed
 
     - name: try to remove gox again
@@ -85,24 +85,24 @@
         name: github.com/mitchellh/gox
       register: result
     - name: assert that gox is not changed
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: check absense of gox binary
-      file:
+      ansible.builtin.file:
         state: absent
         path: ~/go/bin/gox
       register: result
     - name: assert that gox binary is absent
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 
     - name: check absense of gox sources
-      file:
+      ansible.builtin.file:
         state: absent
         path: ~/go/src/github.com/mitchellh/gox
       register: result
     - name: assert that gox source is absent
-      assert:
+      ansible.builtin.assert:
         that: result is not changed
 ...

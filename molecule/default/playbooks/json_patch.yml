@@ -7,21 +7,21 @@
     test_json: "{{ ansible_user_dir }}/test.json"
   tasks:
     - name: deploy the test json file
-      copy:
+      ansible.builtin.copy:
         content: '{"foo": {"one": 1, "bar": "baz"}}'  # noqa 206
         dest: "{{ test_json }}"
         mode: 0644
     - name: get checksum of original json
-      stat:
+      ansible.builtin.stat:
         path: "{{ test_json }}"
       register: file1
 
     - name: get the original file content
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data0
     - name: assert that original json is expected
-      assert:
+      ansible.builtin.assert:
         that:
           - data0.content |b64decode |from_json |json_query('foo.qux') is none
           - data0.content |b64decode |from_json |json_query('foo.bar') == 'baz'
@@ -39,24 +39,24 @@
       register: add1
 
     - name: get file content after adding
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data1
     - name: assert that adding has changed json and it really has 'qux'
-      assert:
+      ansible.builtin.assert:
         that:
           - add1 is changed
           - data1.content |b64decode |from_json |json_query('foo.qux') == 'quux'
 
     - name: check backup file after adding
-      stat:
+      ansible.builtin.stat:
         path: "{{ add1.backup }}"
       register: add1_backup
     - name: assert that backup file exists and is valid
-      assert:
+      ansible.builtin.assert:
         that: add1_backup.stat.checksum == file1.stat.checksum
     - name: print backup file name
-      debug:
+      ansible.builtin.debug:
         msg: "{{ add1.backup }}"
 
     - name: add the 'qux' member again
@@ -69,7 +69,7 @@
         backup: true
       register: add2
     - name: assert that adding 'qux' didn't change this time
-      assert:
+      ansible.builtin.assert:
         that: add2 is not changed
 
     - name: remove the 'bar' member from json
@@ -81,11 +81,11 @@
       register: remove1
 
     - name: get file content after removal
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data2
     - name: assert that removal has changed json and it doesn't have 'bar'
-      assert:
+      ansible.builtin.assert:
         that:
           - remove1 is changed
           - data2.content |b64decode |from_json |json_query('foo.bar') is none
@@ -98,18 +98,18 @@
             path: "/foo/bar"
       register: remove2
     - name: assert that removal didn't change this time
-      assert:
+      ansible.builtin.assert:
         that: remove2 is not changed
 
     - name: restore original json from backup
-      copy:
+      ansible.builtin.copy:
         remote_src: true
         src: "{{ add1.backup }}"
         dest: "{{ test_json }}"
         mode: 0644
       register: restore1
     - name: assert that restored file is dentical to original json
-      assert:
+      ansible.builtin.assert:
         that: restore1.checksum == file1.stat.checksum
 
     - name: move the 'one' member to 'uno'
@@ -122,11 +122,11 @@
       register: move1
 
     - name: get file content after move
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data3
     - name: assert that the 'one' member was moved
-      assert:
+      ansible.builtin.assert:
         that:
           - move1 is changed
           - data3.content |b64decode |from_json | json_query('foo.one') is none
@@ -141,7 +141,7 @@
             path: /foo/uno
       register: move2
     - name: assert that the move didn't change this time
-      assert:
+      ansible.builtin.assert:
         that: move2 is not changed
 
     - name: replace the 'uno' member with a new value
@@ -154,11 +154,11 @@
       register: replace1
 
     - name: get file content after replacement
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data4
     - name: assert that the 'uno' member's value was replaced
-      assert:
+      ansible.builtin.assert:
         that:
           - replace1 is changed
           - data4.content |b64decode |from_json |json_query('foo.uno') == 'one'
@@ -172,7 +172,7 @@
             value: one
       register: replace2
     - name: assert that the replace didn't change this time
-      assert:
+      ansible.builtin.assert:
         that: replace2 is not changed
 
     - name: copy the 'uno' member into a new member and change its value
@@ -185,11 +185,11 @@
       register: copy1
 
     - name: get file content after copying
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ test_json }}"
       register: data5
     - name: assert that the copy duplicated the value
-      assert:
+      ansible.builtin.assert:
         that:
           - copy1 is changed
           - data5.content |b64decode |from_json |json_query('foo.dos') == 'one'
@@ -203,7 +203,7 @@
             path: /foo/dos
       register: copy2
     - name: assert that the copy didn't change this time
-      assert:
+      ansible.builtin.assert:
         that: copy2 is not changed
 
     - name: test the value of 'dos' is 'two'
@@ -215,7 +215,7 @@
             value: two
       register: test1
     - name: assert that the test did not pass
-      assert:
+      ansible.builtin.assert:
         that:
           - test1 is not changed
           - not test1.tested

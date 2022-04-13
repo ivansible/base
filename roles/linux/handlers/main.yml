@@ -6,28 +6,28 @@
 - name: update system temp files
   # exclude /dev as a workaround for below openvz error:
   # "Failed to openat(/dev/simfs): Operation not permitted"
-  command: systemd-tmpfiles --create --exclude-prefix /dev
+  ansible.builtin.command: systemd-tmpfiles --create --exclude-prefix /dev
   become: true
   # systemd-tmpfiles files on github runners
   when: lin_systemd_tmpfiles |bool
 
 - name: reload systemd daemon
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
   become: true
 
 - name: reload ubuntu firewall
-  command: ufw reload
+  ansible.builtin.command: ufw reload
   become: true
 
 - name: restart ssh service
-  systemd:
+  ansible.builtin.systemd:
     name: sshd
     state: restarted
   become: true
 
 - name: restart syslog service
-  systemd:
+  ansible.builtin.systemd:
     name: syslog
     state: restarted
   become: true
@@ -35,7 +35,7 @@
 # This must be the last handler
 - name: remove temporary play files
   # noqa 302
-  shell: rm -rfv {{ temp_file }}.*
+  ansible.builtin.shell: rm -rfv {{ temp_file }}.*
   become: true
   register: _rm_temp
   changed_when: _rm_temp.stdout.find('removed') != -1

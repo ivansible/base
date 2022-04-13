@@ -6,15 +6,15 @@
   tags: ferm_rule
   tasks:
     - name: stat 1st rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/41-myrule.ferm
       register: rule1
     - name: stat 2nd rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/42-myrule.ferm
       register: rule2
     - name: assert that both rule files are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - not rule1.stat.exists
           - not rule2.stat.exists
@@ -27,24 +27,24 @@
           domain ip table filter chain INPUT proto udp dport 4441 REJECT;
         hook: custom
     - name: stat 1st rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/41-myrule.ferm
       register: rule1
     - name: stat 2nd rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/42-myrule.ferm
       register: rule2
     - name: assert that only 1st rule file is present
-      assert:
+      ansible.builtin.assert:
         that:
           - rule1.stat.exists
           - not rule2.stat.exists
     - name: get content of 1st rule file
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/custom.d/41-myrule.ferm
       register: data
     - name: assert that 1st rule text is valid
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('4441')
           - data.content |b64decode is not search('4442')
@@ -57,24 +57,24 @@
           domain ip table filter chain INPUT proto udp dport 4441 REJECT;
         hook: custom
     - name: stat 1st rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/41-myrule.ferm
       register: rule1
     - name: stat 2nd rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/42-myrule.ferm
       register: rule2
     - name: assert that only 2nd rule file is present
-      assert:
+      ansible.builtin.assert:
         that:
           - not rule1.stat.exists
           - rule2.stat.exists
     - name: get content of 2nd rule file
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/custom.d/42-myrule.ferm
       register: data
     - name: assert that 2nd rule text is valid
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('4441')
           - data.content |b64decode is not search('4442')
@@ -87,24 +87,24 @@
           domain ip table filter chain INPUT proto udp dport 4442 REJECT;
         hook: custom
     - name: stat 1st rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/41-myrule.ferm
       register: rule1
     - name: stat 2nd rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/42-myrule.ferm
       register: rule2
     - name: assert that only 2nd rule file is present
-      assert:
+      ansible.builtin.assert:
         that:
           - not rule1.stat.exists
           - rule2.stat.exists
     - name: get content of 2nd rule file
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/custom.d/42-myrule.ferm
       register: data
     - name: assert that 2nd rule text is valid
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('4441')
           - data.content |b64decode is search('4442')
@@ -116,15 +116,15 @@
         hook: custom
         state: absent
     - name: stat 1st rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/41-myrule.ferm
       register: rule1
     - name: stat 2nd rule file
-      stat:
+      ansible.builtin.stat:
         path: /etc/ferm/custom.d/42-myrule.ferm
       register: rule2
     - name: assert that both rule files are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - not rule1.stat.exists
           - not rule2.stat.exists

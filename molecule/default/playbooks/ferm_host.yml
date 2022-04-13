@@ -7,11 +7,11 @@
   tasks:
     ## test internal hosts
     - name: get content of hosts.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.int
       register: data
     - name: assert that both internal hosts are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
@@ -21,11 +21,11 @@
         host: 192.168.99.1
         zone: internal
     - name: get content of hosts.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.int
       register: data
     - name: assert that only 1st internal host is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
@@ -35,11 +35,11 @@
         host: 192.168.99.2
         zone: internal
     - name: get content of hosts.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.int
       register: data
     - name: assert that both internal hosts are present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('192.168.99.1')
           - data.content |b64decode is search('192.168.99.2')
@@ -50,11 +50,11 @@
         zone: internal
         state: absent
     - name: get content of hosts.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.int
       register: data
     - name: assert that only 2nd internal host is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is search('192.168.99.2')
@@ -65,22 +65,22 @@
         zone: internal
         state: absent
     - name: get content of hosts.int
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.int
       register: data
     - name: assert that both internal hosts are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
 
     ## test blocked hosts
     - name: get content of hosts.block
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.block
       register: data
     - name: assert that both blocked hosts are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
@@ -90,11 +90,11 @@
         host: 192.168.99.1
         zone: blocked
     - name: get content of hosts.block
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.block
       register: data
     - name: assert that only 1st blocked host is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
@@ -104,11 +104,11 @@
         host: 192.168.99.2
         zone: blocked
     - name: get content of hosts.block
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.block
       register: data
     - name: assert that both blocked hosts are present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is search('192.168.99.1')
           - data.content |b64decode is search('192.168.99.2')
@@ -119,11 +119,11 @@
         zone: blocked
         state: absent
     - name: get content of hosts.block
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.block
       register: data
     - name: assert that only 2nd blocked host is present
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is search('192.168.99.2')
@@ -134,11 +134,11 @@
         zone: blocked
         state: absent
     - name: get content of hosts.block
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/ferm/hosts.block
       register: data
     - name: assert that both blocked hosts are absent
-      assert:
+      ansible.builtin.assert:
         that:
           - data.content |b64decode is not search('192.168.99.1')
           - data.content |b64decode is not search('192.168.99.2')
