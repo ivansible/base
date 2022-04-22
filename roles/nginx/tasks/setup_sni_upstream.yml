@@ -1,0 +1,22 @@
+---
+- name: setup nginx sni upstream, if enabled
+  ansible.builtin.copy:
+    dest: "{{ nginx_snimux_dir }}/{{ facility }}.conf"
+    content: |
+      {{ hostname }} {{ port }};
+    force: true
+    mode: 0644
+  notify: reload nginx service
+  when:
+    - facility |d('')
+    - hostname |d('')
+
+- name: remove nginx sni upstream, if disabled
+  ansible.builtin.file:
+    path: "{{ nginx_snimux_dir }}/{{ facility }}.conf"
+    state: absent
+  notify: reload nginx service
+  when:
+    - facility |d('')
+    - not hostname |d('')
+...

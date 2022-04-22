@@ -2,6 +2,11 @@
 
 Common Nginx and web-related handlers and defaults for other roles.
 
+This role provides common tasks for use in playbooks:
+- setup_sni_upstream.yml
+  should be included with parameters `facility`, `hostname` and `port`
+  note that if `hostname` is empty, the upstream will be removed.
+
 
 ## Requirements
 

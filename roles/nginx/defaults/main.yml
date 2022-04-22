@@ -29,6 +29,7 @@ nginx_ssl_key:
 nginx_root_dir: /etc/nginx
 nginx_conf_dir: "{{ nginx_root_dir }}/conf.d"
 nginx_stream_dir: "{{ nginx_root_dir }}/streams.d"
+nginx_snimux_dir: "{{ nginx_root_dir }}/snimux.d"
 nginx_site_dir: "{{ nginx_root_dir }}/sites-enabled"
 
 nginx_def_site_dir: /var/www/default
