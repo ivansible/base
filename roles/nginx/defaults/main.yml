@@ -1,9 +1,10 @@
 ---
-# defaults for ivansible.nginx_base and derived roles
+## defaults for ivansible.nginx_base and derived roles
 
 use_sslh: false
-nginx_bind_localhost: false
-nginx_bind_ipv6: true
+
+## binding on [::1] fails in molecule docker
+nginx_bind_ipv6: "{{ not(is_molecule_test and is_docker_target) }}"
 
 web_user: www-data
 web_group: www-data
@@ -50,9 +51,9 @@ nginx_ssl_port_internal: 4443
 nginx_conf_listen_http:
   "listen {{ nginx_http_port }};{% if nginx_bind_ipv6 |bool %}  listen [::]:{{ nginx_http_port }};{% endif %}"
 nginx_conf_listen_ssl_ipv4:
-  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('127.0.0.1:', '') }}{{ nginx_ssl_port }} ssl http2"
+  "listen 127.0.0.1:{{ nginx_ssl_port }} ssl http2"
 nginx_conf_listen_ssl_ipv6:
-  "listen {{ (use_sslh |bool or nginx_bind_localhost |bool) |ternary('[::1]','[::]') }}:{{ nginx_ssl_port }} ssl http2"
+  "listen [::1]:{{ nginx_ssl_port }} ssl http2"
 nginx_conf_listen_ssl:
   "{{ nginx_conf_listen_ssl_ipv4 }};{% if nginx_bind_ipv6 |bool %}  {{ nginx_conf_listen_ssl_ipv6 }};{% endif %}"
 nginx_conf_listen:
